@@ -97,3 +97,32 @@ services:
     arguments: ['@DH\AuditorBundle\User\ConsoleUserProvider', '@DH\Auditor\Configuration', '@dh_auditor.user_provider']
     tags:
       - { name: kernel.event_subscriber }
+
+  # AuditContext - request-scoped service for passing context to audits
+  DH\AuditorBundle\Service\AuditContext:
+    class: DH\AuditorBundle\Service\AuditContext
+  dh_auditor.context: '@DH\AuditorBundle\Service\AuditContext'
+
+  DH\AuditorBundle\Event\AuditContextSubscriber:
+    class: DH\AuditorBundle\Event\AuditContextSubscriber
+    arguments: ['@DH\AuditorBundle\Service\AuditContext']
+    tags:
+      - { name: kernel.event_subscriber }
+
+  # EventAuditService - for creating EVENT-type audit entries
+  DH\AuditorBundle\Service\EventAuditService:
+    class: DH\AuditorBundle\Service\EventAuditService
+    arguments:
+      - '@DH\Auditor\Auditor'
+      - '@DH\Auditor\Provider\Doctrine\DoctrineProvider'
+      - '@doctrine.orm.entity_manager'
+      - '@DH\AuditorBundle\Service\AuditContext'
+  dh_auditor.event_service: '@DH\AuditorBundle\Service\EventAuditService'
+
+  # Snapshot - for reconstructing entity state at a point in time
+  DH\AuditorBundle\Service\Snapshot:
+    class: DH\AuditorBundle\Service\Snapshot
+    arguments:
+      - '@DH\Auditor\Provider\Doctrine\Persistence\Reader\Reader'
+      - '@doctrine.orm.entity_manager'
+  dh_auditor.snapshot: '@DH\AuditorBundle\Service\Snapshot'
