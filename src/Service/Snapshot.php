@@ -7,7 +7,6 @@ namespace DH\AuditorBundle\Service;
 use DateTimeInterface;
 use DH\Auditor\Model\Entry;
 use DH\Auditor\Provider\Doctrine\Persistence\Reader\Filter\DateRangeFilter;
-use DH\Auditor\Provider\Doctrine\Persistence\Reader\Filter\RangeFilter;
 use DH\Auditor\Provider\Doctrine\Persistence\Reader\Filter\SimpleFilter;
 use DH\Auditor\Provider\Doctrine\Persistence\Reader\Query;
 use DH\Auditor\Provider\Doctrine\Persistence\Reader\Reader;
@@ -34,6 +33,22 @@ class Snapshot
     ) {}
 
     /**
+     * Get a single property value for a single entity at a specific point in time.
+     *
+     * @param object $entity The entity to get historical state for
+     * @param DateTimeInterface $datetime The point in time to reconstruct
+     * @param string $property The property name to get
+     * @return mixed The property value at that point in time
+     */
+    public function getPropertySnapshot(object $entity, DateTimeInterface $datetime, string $property): mixed
+    {
+        $snapshot = $this->getPropertiesSnapshot([$entity], $datetime, [$property]);
+        $id = $this->getEntityId($entity);
+
+        return $snapshot[$id][$property] ?? null;
+    }
+
+    /**
      * Get entity properties at a specific point in time.
      *
      * @param array<object> $entities Entities to get historical state for (must all be same class)
@@ -54,7 +69,7 @@ class Snapshot
         $result = $this->getCurrentSnapshot($entities, $properties, $class);
 
         // Get all update audits from datetime to now
-        $audits = $this->getAuditsForSnapshot($class, array_keys($result), $datetime, $properties);
+        $audits = $this->getAuditsForSnapshot($class, array_keys($result), $datetime);
 
         // Get property types for handling collections vs scalars
         $propertyTypes = $this->getPropertyTypes($class, $properties);
@@ -137,22 +152,38 @@ class Snapshot
      * Get audits for the snapshot query.
      *
      * @param array<int|string> $entityIds
-     * @param array<string> $properties
      * @return array<Entry>
      */
     private function getAuditsForSnapshot(
         string $class,
         array $entityIds,
         DateTimeInterface $datetime,
-        array $properties
     ): array {
+        // Get the configured timezone to match how auditor stores timestamps
+        $timezone = new \DateTimeZone(
+            $this->reader->getProvider()->getAuditor()->getConfiguration()->getTimezone()
+        );
+        $now = new \DateTimeImmutable('now', $timezone);
+
+        // Convert $datetime to the same timezone for accurate comparison
+        $datetime = \DateTimeImmutable::createFromInterface($datetime)->setTimezone($timezone);
+
+        // If datetime is in the future or very close to now, no audits to reverse
+        if ($datetime >= $now) {
+            return [];
+        }
+
+        if ([] === $entityIds) {
+            return [];
+        }
+
         $query = $this->reader->createQuery($class, ['page_size' => null]);
 
-        // Filter by entity IDs
-        $query->addFilter(new RangeFilter(Query::OBJECT_ID, $entityIds));
+        // Filter by entity IDs - SimpleFilter handles arrays with IN clause
+        $query->addFilter(new SimpleFilter(Query::OBJECT_ID, array_map('strval', $entityIds)));
 
         // Filter by date - get all audits from datetime to now
-        $query->addFilter(new DateRangeFilter(Query::CREATED_AT, $datetime, new \DateTimeImmutable()));
+        $query->addFilter(new DateRangeFilter(Query::CREATED_AT, $datetime, $now));
 
         // Only update types (inserts don't have 'old' values to reverse)
         $query->addFilter(new SimpleFilter(Query::TYPE, 'update'));
@@ -241,6 +272,16 @@ class Snapshot
     {
         if (null === $value) {
             return null;
+        }
+
+        // Handle backed enums (e.g., OrderStatus, AuditType)
+        if (is_subclass_of($type, \BackedEnum::class)) {
+            // If already the correct enum, return as-is
+            if ($value instanceof $type) {
+                return $value;
+            }
+            // Otherwise try to create from backing value
+            return $type::tryFrom($value) ?? $value;
         }
 
         return match ($type) {
