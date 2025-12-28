@@ -18,18 +18,16 @@
   ],
   "require": {
     "php": ">=8.2",
-    "ext-intl": "*",
     "damienharper/auditor": "^3.2",
     "doctrine/doctrine-bundle": "^2.0|^3.0",
-    "symfony/asset": "^5.4|^6.4|^7.0",
+    "doctrine/orm": "^3.1",
     "symfony/doctrine-bridge": "^5.4|^6.4|^7.0",
     "symfony/event-dispatcher": "^5.4|^6.4|^7.0",
     "symfony/lock": "^5.4|^6.4|^7.0",
-    "symfony/security-bundle": "^5.4|^6.4|^7.0",
-    "symfony/translation": "^5.4|^6.4|^7.0",
-    "symfony/twig-bundle": "^5.4|^6.4|^7.0",
-    "twig/extra-bundle": "^3.3",
-    "twig/intl-extra": "^3.3"
+    "symfony/security-bundle": "^5.4|^6.4|^7.0"
+  },
+  "suggest": {
+    "kachnitel/admin-bundle": "For audit log viewing with filtering and pagination"
   },
   "autoload": {
     "psr-4": {
@@ -39,7 +37,8 @@
   "autoload-dev": {
     "psr-4": {
       "DH\\AuditorBundle\\Tests\\": "tests",
-      "DH\\Auditor\\Tests\\": "vendor/damienharper/auditor/tests"
+      "DH\\Auditor\\Tests\\": "vendor/damienharper/auditor/tests",
+      "Kachnitel\\AdminBundle\\": "tests/Stubs/AdminBundle"
     }
   },
   "require-dev": {
@@ -50,8 +49,7 @@
     "symfony/browser-kit": "^5.4|^6.4|^7.0",
     "symfony/css-selector": "^5.4|^6.4|^7.0",
     "symfony/framework-bundle": "^5.4|^6.4|^7.0",
-    "symfony/var-dumper": "^5.4|^6.4|^7.0",
-    "symfony/webpack-encore-bundle": "^1.12|^2.0"
+    "symfony/var-dumper": "^5.4|^6.4|^7.0"
   },
   "scripts": {
     "test": "XDEBUG_MODE=coverage ./vendor/bin/phpunit --colors=always",
@@ -69,6 +67,9 @@
     "sort-packages": true,
     "allow-plugins": {
       "composer/package-versions-deprecated": true
+    },
+    "preferred-install": {
+      "damienharper/auditor": "source"
     }
   },
   "extra": {

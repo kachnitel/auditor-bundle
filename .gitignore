@@ -11,3 +11,4 @@ tests/coverage/
 composer.lock
 *.sqlite
 .preload.php
+CLAUDE.md

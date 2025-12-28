@@ -26,15 +26,9 @@ services:
       - { name: dh_auditor.provider }
   dh_auditor.provider.doctrine: '@DH\Auditor\Provider\Doctrine\DoctrineProvider'
 
-  DH\AuditorBundle\Routing\RoutingLoader:
-    arguments:
-      - '@routing.loader.attribute'
-      - '%dh_auditor.provider.doctrine.configuration%'
-    tags:
-      - { name: routing.loader }
-
   DH\Auditor\Provider\Doctrine\Persistence\Reader\Reader:
     class: DH\Auditor\Provider\Doctrine\Persistence\Reader\Reader
+    public: true
     arguments:
       - '@DH\Auditor\Provider\Doctrine\DoctrineProvider'
 
@@ -65,10 +59,6 @@ services:
       - [setAuditor, ['@DH\Auditor\Auditor']]
 
   # Bundle related services
-  DH\AuditorBundle\Controller\ViewerController:
-    arguments: ['@twig']
-    tags: ['controller.service_arguments']
-
   DH\AuditorBundle\User\UserProvider:
     class: DH\AuditorBundle\User\UserProvider
     arguments: ['@security.token_storage']
@@ -86,12 +76,6 @@ services:
     class: DH\AuditorBundle\Security\RoleChecker
     arguments: ['@security.authorization_checker', '@DH\Auditor\Provider\Doctrine\DoctrineProvider']
   dh_auditor.role_checker: '@DH\AuditorBundle\Security\RoleChecker'
-
-  DH\AuditorBundle\Event\ViewerEventSubscriber:
-    class: DH\AuditorBundle\Event\ViewerEventSubscriber
-    arguments: ['@DH\Auditor\Auditor']
-    tags:
-      - { name: kernel.event_subscriber }
 
   DH\AuditorBundle\Event\ConsoleEventSubscriber:
     arguments: ['@DH\AuditorBundle\User\ConsoleUserProvider', '@DH\Auditor\Configuration', '@dh_auditor.user_provider']
@@ -122,6 +106,7 @@ services:
   # Snapshot - for reconstructing entity state at a point in time
   DH\AuditorBundle\Service\Snapshot:
     class: DH\AuditorBundle\Service\Snapshot
+    public: true
     arguments:
       - '@DH\Auditor\Provider\Doctrine\Persistence\Reader\Reader'
       - '@doctrine.orm.entity_manager'
@@ -130,6 +115,7 @@ services:
   # AuditReader - for querying audit entries
   DH\AuditorBundle\Service\AuditReader:
     class: DH\AuditorBundle\Service\AuditReader
+    public: true
     arguments:
       - '@DH\Auditor\Provider\Doctrine\Persistence\Reader\Reader'
   dh_auditor.reader: '@DH\AuditorBundle\Service\AuditReader'

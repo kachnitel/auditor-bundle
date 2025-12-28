@@ -11,7 +11,6 @@ use DH\Auditor\Provider\Doctrine\DoctrineProvider;
 use DH\Auditor\Provider\Doctrine\Persistence\Event\CreateSchemaListener;
 use DH\Auditor\Provider\Doctrine\Persistence\Event\TableSchemaListener;
 use DH\Auditor\Provider\Doctrine\Persistence\Reader\Reader;
-use DH\AuditorBundle\Controller\ViewerController;
 use DH\AuditorBundle\DHAuditorBundle;
 use DH\AuditorBundle\Event\ConsoleEventSubscriber;
 use Doctrine\Bundle\DoctrineBundle\DoctrineBundle;
@@ -19,7 +18,6 @@ use Nyholm\BundleTest\TestKernel;
 use PHPUnit\Framework\Attributes\Small;
 use Symfony\Bundle\FrameworkBundle\Test\KernelTestCase;
 use Symfony\Bundle\SecurityBundle\SecurityBundle;
-use Symfony\Bundle\TwigBundle\TwigBundle;
 use Symfony\Component\HttpKernel\Kernel;
 use Symfony\Component\HttpKernel\KernelInterface;
 
@@ -36,7 +34,6 @@ final class DHAuditorBundleTest extends KernelTestCase
             // Add some other bundles we depend on
             $kernel->addTestBundle(DoctrineBundle::class);
             $kernel->addTestBundle(SecurityBundle::class);
-            $kernel->addTestBundle(TwigBundle::class);
 
             // Add some configuration
             $kernel->addTestConfig(__DIR__.'/Fixtures/Resources/config/dh_auditor.yaml');
@@ -75,9 +72,6 @@ final class DHAuditorBundleTest extends KernelTestCase
 
         $this->assertTrue($container->has(CreateSchemaListener::class));
         $this->assertInstanceOf(CreateSchemaListener::class, $container->get(CreateSchemaListener::class));
-
-        $this->assertTrue($container->has(ViewerController::class));
-        $this->assertInstanceOf(ViewerController::class, $container->get(ViewerController::class));
 
         $this->assertTrue($container->has(ConsoleEventSubscriber::class));
         $this->assertInstanceOf(ConsoleEventSubscriber::class, $container->get(ConsoleEventSubscriber::class));

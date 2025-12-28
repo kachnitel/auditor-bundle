@@ -5,6 +5,7 @@ declare(strict_types=1);
 namespace DH\AuditorBundle;
 
 use DH\AuditorBundle\DependencyInjection\Compiler\AddProviderCompilerPass;
+use DH\AuditorBundle\DependencyInjection\Compiler\AdminBundleIntegrationPass;
 use DH\AuditorBundle\DependencyInjection\Compiler\CustomConfigurationCompilerPass;
 use DH\AuditorBundle\DependencyInjection\Compiler\DoctrineProviderConfigurationCompilerPass;
 use Symfony\Component\DependencyInjection\Compiler\PassConfig;
@@ -23,5 +24,6 @@ class DHAuditorBundle extends Bundle
         $container->addCompilerPass(new AddProviderCompilerPass());
         $container->addCompilerPass(new DoctrineProviderConfigurationCompilerPass(), PassConfig::TYPE_BEFORE_OPTIMIZATION, 1);
         $container->addCompilerPass(new CustomConfigurationCompilerPass());
+        $container->addCompilerPass(new AdminBundleIntegrationPass());
     }
 }
