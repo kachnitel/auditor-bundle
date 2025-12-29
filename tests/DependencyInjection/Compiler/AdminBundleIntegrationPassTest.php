@@ -35,7 +35,7 @@ final class AdminBundleIntegrationPassTest extends AbstractCompilerPassTestCase
         $this->assertContainerBuilderHasService(AuditDataSourceFactory::class);
         $this->assertContainerBuilderHasServiceDefinitionWithTag(
             AuditDataSourceFactory::class,
-            'admin.data_source_provider'
+            'Kachnitel\AdminBundle\DataSource\DataSourceProviderInterface'
         );
         $this->assertContainerBuilderHasAlias('dh_auditor.admin.data_source_factory', AuditDataSourceFactory::class);
     }

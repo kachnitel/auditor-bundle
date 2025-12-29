@@ -1,0 +1,144 @@
+{# Inline preview of audit changes for table display - similar to old "updated" block #}
+{# Usage: include '@DHAuditor/Admin/Audit/_changes-preview.html.twig' with {entry: entry, item: item} #}
+
+{% set diffs = item.getDiffs() %}
+{% set entryId = item.getId() %}
+
+{% if diffs is empty %}
+    <span class="text-muted">No changes</span>
+{% else %}
+    <ul class="list-unstyled d-inline-block mb-0">
+        {% for key, value in diffs %}
+            {% if key not in ['@source', '@context'] and value is iterable %}
+                <li class="mb-1">
+                    {% if value.old is defined and value.new is defined %}
+                        {# Field update #}
+                        <strong>{{ key }}:</strong>
+                        <span class="badge bg-secondary">
+                            {{ value.old|json_encode|slice(0, 20) }}
+                        </span>
+                        {# Numeric comparison arrows #}
+                        {% set oldJson = value.old|json_encode %}
+                        {% set newJson = value.new|json_encode %}
+                        {% if oldJson matches '/^-?\\d+(\\.\\d+)?$/' and newJson matches '/^-?\\d+(\\.\\d+)?$/' %}
+                            {% if value.old < value.new %}
+                                <span class="material-icons ms-1 align-middle text-success" style="font-size: 1rem;">north_east</span>
+                            {% elseif value.old > value.new %}
+                                <span class="material-icons ms-1 align-middle text-danger" style="font-size: 1rem;">south_east</span>
+                            {% else %}
+                                <span class="material-icons ms-1 align-middle" style="font-size: 1rem;">east</span>
+                            {% endif %}
+                        {% else %}
+                            <span class="material-icons ms-1 align-middle" style="font-size: 1rem;">east</span>
+                        {% endif %}
+                        <span class="badge bg-secondary ms-1">
+                            {{ value.new|json_encode|slice(0, 20) }}
+                        </span>
+                    {% elseif value.removed is defined and value.added is defined %}
+                        {# Association change #}
+                        <strong>{{ key }}:</strong>
+                        <span class="badge bg-danger">- {{ value.removed|length }}</span>
+                        <span class="badge bg-success ms-1">+ {{ value.added|length }}</span>
+                    {% else %}
+                        {# Other change #}
+                        <strong>{{ key }}:</strong>
+                        <span class="text-muted">{{ value|json_encode|slice(0, 50) }}</span>
+                    {% endif %}
+                </li>
+            {% endif %}
+        {% endfor %}
+    </ul>
+
+    {# Show data button and modal #}
+    <button type="button" class="btn btn-light btn-sm float-end" data-bs-toggle="modal" data-bs-target="#auditModal{{ entryId }}">
+        Show data
+    </button>
+
+    <div class="modal fade" id="auditModal{{ entryId }}" tabindex="-1">
+        <div class="modal-dialog modal-lg">
+            <div class="modal-content">
+                <div class="modal-header">
+                    <h5 class="modal-title">Audit data</h5>
+                    <button type="button" class="btn-close" data-bs-dismiss="modal" aria-label="Close"></button>
+                </div>
+                <div class="modal-body">
+                    {# Accordion with all changes #}
+                    <div class="accordion" id="accordionAudit{{ entryId }}">
+                        {% set changeIndex = 0 %}
+                        {% for key, value in diffs %}
+                            {% if key not in ['@source', '@context'] and value is iterable %}
+                                {% set changeIndex = changeIndex + 1 %}
+                                <div class="accordion-item">
+                                    <h2 class="accordion-header" id="heading{{ entryId }}_{{ changeIndex }}">
+                                        <button class="accordion-button collapsed" type="button" data-bs-toggle="collapse" data-bs-target="#collapse{{ entryId }}_{{ changeIndex }}" aria-expanded="false" aria-controls="collapse{{ entryId }}_{{ changeIndex }}">
+                                            {{ key }}
+                                            <div class="d-flex justify-content-between ms-auto">
+                                                {% if value.old is defined and value.new is defined %}
+                                                    <span class="badge bg-secondary">
+                                                        {{ value.old|json_encode|slice(0, 20) }}
+                                                    </span>
+                                                    <span class="material-icons ms-3">east</span>
+                                                    <span class="badge bg-secondary ms-3">
+                                                        {{ value.new|json_encode|slice(0, 20) }}
+                                                    </span>
+                                                {% elseif value.removed is defined and value.added is defined %}
+                                                    <span class="badge bg-danger">- {{ value.removed|length }}</span>
+                                                    <span class="badge bg-success ms-3">+ {{ value.added|length }}</span>
+                                                {% endif %}
+                                            </div>
+                                        </button>
+                                    </h2>
+                                    <div id="collapse{{ entryId }}_{{ changeIndex }}" class="accordion-collapse collapse" aria-labelledby="heading{{ entryId }}_{{ changeIndex }}" data-bs-parent="#accordionAudit{{ entryId }}">
+                                        <div class="accordion-body">
+                                            {% if value.old is defined %}
+                                                <div class="row">
+                                                    <div class="col-6">
+                                                        <label class="fw-bold">Old value</label>
+                                                        <pre class="bg-light p-2 rounded overflow-auto" style="max-height: 300px;"><code>{{ value.old|json_encode(constant('JSON_PRETTY_PRINT')) }}</code></pre>
+                                                    </div>
+                                                    <div class="col-6">
+                                                        <label class="fw-bold">New value</label>
+                                                        <pre class="bg-light p-2 rounded overflow-auto" style="max-height: 300px;"><code>{{ value.new|json_encode(constant('JSON_PRETTY_PRINT')) }}</code></pre>
+                                                    </div>
+                                                </div>
+                                            {% elseif value.removed is defined %}
+                                                <div class="row">
+                                                    <div class="col-6">
+                                                        <label class="fw-bold">Removed</label>
+                                                        <ul class="list-unstyled">
+                                                            {% for item in value.removed %}
+                                                                <li class="text-nowrap overflow-auto"><code>{{ item|json_encode }}</code></li>
+                                                            {% endfor %}
+                                                        </ul>
+                                                    </div>
+                                                    <div class="col-6">
+                                                        <label class="fw-bold">Added</label>
+                                                        <ul class="list-unstyled">
+                                                            {% for item in value.added %}
+                                                                <li class="text-nowrap overflow-auto"><code>{{ item|json_encode }}</code></li>
+                                                            {% endfor %}
+                                                        </ul>
+                                                    </div>
+                                                </div>
+                                            {% else %}
+                                                <div class="row">
+                                                    <div class="col-12">
+                                                        <label class="fw-bold">Value</label>
+                                                        <pre class="bg-light p-2 rounded"><code>{{ value|json_encode(constant('JSON_PRETTY_PRINT')) }}</code></pre>
+                                                    </div>
+                                                </div>
+                                            {% endif %}
+                                        </div>
+                                    </div>
+                                </div>
+                            {% endif %}
+                        {% endfor %}
+                    </div>
+                </div>
+                <div class="modal-footer">
+                    <button type="button" class="btn btn-secondary" data-bs-dismiss="modal">Close</button>
+                </div>
+            </div>
+        </div>
+    </div>
+{% endif %}

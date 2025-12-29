@@ -1,0 +1,148 @@
+{# Audit entry detail view for admin bundle #}
+
+{% block content %}
+<div class="audit-detail-view">
+    {# Header with basic info #}
+    <div class="card mb-4">
+        <div class="card-body">
+            <div class="row">
+                <div class="col-md-6">
+                    <h6 class="text-muted">Type</h6>
+                    <p>
+                        <span class="badge bg-info">{{ entry.type }}</span>
+                    </p>
+                </div>
+                <div class="col-md-6">
+                    <h6 class="text-muted">Created At</h6>
+                    <p>{{ entry.createdAt|date('Y-m-d H:i:s') }}</p>
+                </div>
+            </div>
+            <div class="row">
+                <div class="col-md-6">
+                    <h6 class="text-muted">Entity ID</h6>
+                    <p><code>{{ entry.objectId }}</code></p>
+                </div>
+                <div class="col-md-6">
+                    <h6 class="text-muted">User</h6>
+                    <p>{{ entry.username ?? 'System' }}</p>
+                </div>
+            </div>
+            {% if entry.transactionHash %}
+                <div class="row">
+                    <div class="col-md-6">
+                        <h6 class="text-muted">Transaction</h6>
+                        <p><code>{{ entry.transactionHash }}</code></p>
+                    </div>
+                    <div class="col-md-6">
+                        <h6 class="text-muted">IP Address</h6>
+                        <p>{{ entry.ip ?? '-' }}</p>
+                    </div>
+                </div>
+            {% endif %}
+        </div>
+    </div>
+
+    {# Changes accordion #}
+    {% set diffs = entry.getDiffs() %}
+    {% if diffs is not empty %}
+        <div class="card">
+            <div class="card-header">
+                <h5 class="mb-0">Changes</h5>
+            </div>
+            <div class="card-body">
+                <div class="accordion" id="changesAccordion">
+                    {% set changeIndex = 0 %}
+                    {% for key, value in diffs %}
+                        {% if key not in ['@source', '@context'] and value is iterable %}
+                            {% set changeIndex = changeIndex + 1 %}
+                            <div class="accordion-item">
+                                <h2 class="accordion-header" id="heading{{ changeIndex }}">
+                                    <button class="accordion-button collapsed" type="button" data-bs-toggle="collapse" data-bs-target="#collapse{{ changeIndex }}" aria-expanded="false" aria-controls="collapse{{ changeIndex }}">
+                                        <strong>{{ key }}</strong>
+                                        <div class="ms-auto">
+                                            {% if value.old is defined and value.new is defined %}
+                                                <span class="badge bg-secondary ms-2">
+                                                    {{ value.old|json_encode|slice(0, 20) }}
+                                                </span>
+                                                <span class="mx-2">→</span>
+                                                <span class="badge bg-secondary">
+                                                    {{ value.new|json_encode|slice(0, 20) }}
+                                                </span>
+                                            {% elseif value.removed is defined and value.added is defined %}
+                                                <span class="badge bg-danger ms-2">- {{ value.removed|length }}</span>
+                                                <span class="badge bg-success ms-2">+ {{ value.added|length }}</span>
+                                            {% endif %}
+                                        </div>
+                                    </button>
+                                </h2>
+                                <div id="collapse{{ changeIndex }}" class="accordion-collapse collapse" aria-labelledby="heading{{ changeIndex }}" data-bs-parent="#changesAccordion">
+                                    <div class="accordion-body">
+                                        {% if value.old is defined and value.new is defined %}
+                                            <div class="row">
+                                                <div class="col-6">
+                                                    <h6>Old Value</h6>
+                                                    <pre class="bg-light p-2 rounded"><code>{{ value.old|json_encode(constant('JSON_PRETTY_PRINT')) }}</code></pre>
+                                                </div>
+                                                <div class="col-6">
+                                                    <h6>New Value</h6>
+                                                    <pre class="bg-light p-2 rounded"><code>{{ value.new|json_encode(constant('JSON_PRETTY_PRINT')) }}</code></pre>
+                                                </div>
+                                            </div>
+                                        {% elseif value.removed is defined and value.added is defined %}
+                                            <div class="row">
+                                                <div class="col-6">
+                                                    <h6>Removed ({{ value.removed|length }})</h6>
+                                                    <ul class="list-unstyled">
+                                                        {% for item in value.removed %}
+                                                            <li><code>{{ item|json_encode }}</code></li>
+                                                        {% endfor %}
+                                                    </ul>
+                                                </div>
+                                                <div class="col-6">
+                                                    <h6>Added ({{ value.added|length }})</h6>
+                                                    <ul class="list-unstyled">
+                                                        {% for item in value.added %}
+                                                            <li><code>{{ item|json_encode }}</code></li>
+                                                        {% endfor %}
+                                                    </ul>
+                                                </div>
+                                            </div>
+                                        {% else %}
+                                            <div class="row">
+                                                <div class="col-12">
+                                                    <pre class="bg-light p-2 rounded"><code>{{ value|json_encode(constant('JSON_PRETTY_PRINT')) }}</code></pre>
+                                                </div>
+                                            </div>
+                                        {% endif %}
+                                    </div>
+                                </div>
+                            </div>
+                        {% endif %}
+                    {% endfor %}
+                </div>
+            </div>
+        </div>
+    {% endif %}
+</div>
+
+<style>
+.audit-detail-view .accordion-button {
+    padding: 0.75rem 1rem;
+}
+
+.audit-detail-view .accordion-body {
+    padding: 1.5rem;
+}
+
+.audit-detail-view pre {
+    max-height: 300px;
+    overflow-y: auto;
+    margin-bottom: 0;
+}
+
+.audit-detail-view .badge {
+    font-size: 0.85rem;
+    padding: 0.35em 0.65em;
+}
+</style>
+{% endblock %}

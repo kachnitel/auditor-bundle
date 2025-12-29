@@ -9,6 +9,7 @@ use DH\Auditor\Provider\Doctrine\Persistence\Reader\Filter\DateRangeFilter;
 use DH\Auditor\Provider\Doctrine\Persistence\Reader\Filter\SimpleFilter;
 use DH\Auditor\Provider\Doctrine\Persistence\Reader\Query;
 use DH\Auditor\Provider\Doctrine\Persistence\Reader\Reader;
+use DH\AuditorBundle\Helper\DiffFormatter;
 use DH\AuditorBundle\Helper\UrlHelper;
 use Kachnitel\AdminBundle\DataSource\ColumnMetadata;
 use Kachnitel\AdminBundle\DataSource\DataSourceInterface;
@@ -51,12 +52,18 @@ class AuditDataSource implements DataSourceInterface
     public function getColumns(): array
     {
         return [
-            'id' => new ColumnMetadata('id', 'ID', 'integer', true),
-            'object_id' => new ColumnMetadata('object_id', 'Entity ID', 'string', true),
-            'type' => new ColumnMetadata('type', 'Action', 'string', true),
-            'blame_user' => new ColumnMetadata('blame_user', 'User', 'string', false),
-            'created_at' => new ColumnMetadata('created_at', 'Date', 'datetime', true),
-            'diffs' => new ColumnMetadata('diffs', 'Changes', 'json', false),
+            'id' => new ColumnMetadata(name: 'id', label: 'ID', type: 'integer'),
+            'object_id' => new ColumnMetadata(name: 'object_id', label: 'Entity ID', type: 'string'),
+            'type' => new ColumnMetadata(name: 'type', label: 'Action', type: 'string'),
+            'blame_user' => new ColumnMetadata(name: 'blame_user', label: 'User', type: 'string', sortable: false),
+            'created_at' => new ColumnMetadata(name: 'created_at', label: 'Date', type: 'datetime'),
+            'diffs' => new ColumnMetadata(
+                name: 'diffs',
+                label: 'Changes',
+                type: 'json',
+                sortable: false,
+                template: '@DHAuditor/Admin/Audit/_changes-preview.html.twig',
+            ),
         ];
     }
 
@@ -206,6 +213,28 @@ class AuditDataSource implements DataSourceInterface
         }
 
         return $this->shortName;
+    }
+
+    /**
+     * Get a formatted preview of changes for an audit entry.
+     *
+     * @return array<string, mixed>
+     */
+    public function getChangePreview(Entry $entry): array
+    {
+        $diffs = $entry->getDiffs();
+        return DiffFormatter::createPreview($diffs);
+    }
+
+    /**
+     * Get detailed structured diffs for display in a detail view.
+     *
+     * @return array<string, mixed>
+     */
+    public function getDetailedDiffs(Entry $entry): array
+    {
+        $diffs = $entry->getDiffs(includeMedadata: true);
+        return DiffFormatter::getDetailedStructure($diffs);
     }
 
     /**

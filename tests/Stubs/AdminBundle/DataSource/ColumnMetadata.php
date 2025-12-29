@@ -14,7 +14,8 @@ class ColumnMetadata
     public function __construct(
         public readonly string $name,
         public readonly string $label,
-        public readonly string $type,
+        public readonly string $type = 'string',
         public readonly bool $sortable = true,
+        public readonly ?string $template = null,
     ) {}
 }
