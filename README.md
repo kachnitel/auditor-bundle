@@ -1,56 +1,79 @@
-# auditor-bundle [![Tweet](https://img.shields.io/twitter/url/http/shields.io.svg?style=social)](https://twitter.com/intent/tweet?text=Create%20audit%20logs%20for%20all%20Doctrine%20ORM%20database%20related%20changes%20with%20auditor-bundle.&url=https://github.com/DamienHarper/auditor-bundle&hashtags=auditor-bundle)
-[![Latest Stable Version](https://poser.pugx.org/damienharper/auditor-bundle/v/stable)](https://packagist.org/packages/damienharper/auditor-bundle)
-[![Latest Unstable Version](https://poser.pugx.org/damienharper/auditor-bundle/v/unstable)](https://packagist.org/packages/damienharper/auditor-bundle)
-[![auditor-bundle 6.x CI](https://github.com/DamienHarper/auditor-bundle/actions/workflows/ci-6.x.yml/badge.svg)](https://github.com/DamienHarper/auditor-bundle/actions/workflows/ci-6.x.yml)
-[![License](https://poser.pugx.org/damienharper/auditor-bundle/license)](https://packagist.org/packages/damienharper/auditor-bundle)
-[![Scrutinizer Code Quality](https://scrutinizer-ci.com/g/DamienHarper/auditor-bundle/badges/quality-score.png?b=master)](https://scrutinizer-ci.com/g/DamienHarper/auditor-bundle/?branch=master)
-[![codecov](https://codecov.io/gh/DamienHarper/auditor-bundle/branch/master/graph/badge.svg)](https://app.codecov.io/gh/DamienHarper/auditor-bundle/branch/master)
-[![Total Downloads](https://poser.pugx.org/damienharper/auditor-bundle/downloads)](https://packagist.org/packages/damienharper/auditor-bundle)
-[![Monthly Downloads](https://poser.pugx.org/damienharper/auditor-bundle/d/monthly)](https://packagist.org/packages/damienharper/auditor-bundle)
-[![Daily Downloads](https://poser.pugx.org/damienharper/auditor-bundle/d/daily)](https://packagist.org/packages/damienharper/auditor-bundle)
+# auditor-bundle (fork)
 
-`auditor-bundle`, formerly known as `DoctrineAuditBundle` integrates `auditor` library into any Symfony 3.4+ application.
+Fork of [DamienHarper/auditor-bundle](https://github.com/DamienHarper/auditor-bundle) with additional features.
+
+`auditor-bundle`, formerly known as `DoctrineAuditBundle` integrates `auditor` library into Symfony 6.4+ applications.
 
 
-## Demo
-You can try out this bundle by cloning its companion demo app. 
-Follow instructions at [auditor-bundle-demo](https://github.com/DamienHarper/auditor-bundle-demo).
+## Fork Features
+
+This fork adds:
+- **AuditContext**: Add metadata (notes, reasons) to audit entries
+- **AuditReader**: Query audit entries with filters
+- **Snapshot**: Reconstruct entity state at any point in history
+- **EventAuditService**: Create EVENT-type audits for domain events
+- **Admin Integration**: Auto-registered audit data sources with `kachna/admin-bundle`
+
+Changes maintain backward compatibility with the original bundle.
+
+**📖 [See FORK.md for detailed documentation and usage examples](FORK.md)**
+
+<details>
+<summary><strong>View feature details</strong></summary>
+
+### Core Services
+- **AuditContext**: Request-scoped service for adding metadata (notes, reasons) to audits via `@context` injection
+- **AuditReader**: Query interface for retrieving audit entries with filters (entity type, IDs, date ranges, operations)
+- **Snapshot**: Reconstructs entity state at any point in history by reversing audit diffs
+- **EventAuditService**: Creates EVENT-type audits for domain events
+
+### Admin Bundle Integration
+- Preview entity modifications in admin list views
+- Auto-registered when `kachna/admin-bundle` is installed
+- Browse audit logs with filtering and pagination
+
+### Code Quality
+- PHPStan level `max` with strict type coverage
+- Docker-based multi-version testing: `make tests php=8.3 sf=7.1`
+
+</details>
 
 
-## Official Documentation
-`auditor-bundle` official documentation can be found [here](https://damienharper.github.io/auditor-docs/docs/auditor-bundle/index.html).
+## Documentation
+Original `auditor-bundle` documentation: [https://damienharper.github.io/auditor-docs/](https://damienharper.github.io/auditor-docs/docs/auditor-bundle/index.html)
 
 
-## Version Information
-| Version | Status                      | Requirements               | Badges                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                         |
-|:--------|:----------------------------|:---------------------------|:-------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------|
-| 6.x     | Active development :rocket: | PHP >= 8.2, Symfony >= 5.4 | [![auditor-bundle 6.x CI](https://github.com/DamienHarper/auditor-bundle/actions/workflows/ci-6.x.yml/badge.svg)](https://github.com/DamienHarper/auditor-bundle/actions/workflows/ci-6.x.yml) <br/>[![Scrutinizer Code Quality](https://scrutinizer-ci.com/g/DamienHarper/auditor-bundle/badges/quality-score.png?b=master)](https://scrutinizer-ci.com/g/DamienHarper/auditor-bundle/?branch=master) <br/>[![codecov](https://codecov.io/gh/DamienHarper/auditor-bundle/branch/master/graph/badge.svg)](https://app.codecov.io/gh/DamienHarper/auditor-bundle/branch/master) |
-| 5.x     | Active support              | PHP >= 7.4, Symfony >= 4.4 | [![auditor-bundle 5.x CI](https://github.com/DamienHarper/auditor-bundle/actions/workflows/ci-5.x.yml/badge.svg)](https://github.com/DamienHarper/auditor-bundle/actions/workflows/ci-5.x.yml) <br/>[![Scrutinizer Code Quality](https://scrutinizer-ci.com/g/DamienHarper/auditor-bundle/badges/quality-score.png?b=5.x)](https://scrutinizer-ci.com/g/DamienHarper/auditor-bundle/?branch=5.x) <br/>[![codecov](https://codecov.io/gh/DamienHarper/auditor-bundle/branch/master/graph/badge.svg)](https://app.codecov.io/gh/DamienHarper/auditor-bundle/branch/5.x)          |
-| 4.x     | End of life                 | PHP >= 7.2, Symfony >= 3.4 | [![auditor-bundle 4.x CI](https://github.com/DamienHarper/auditor-bundle/actions/workflows/ci-4.x.yml/badge.svg)](https://github.com/DamienHarper/auditor-bundle/actions/workflows/ci-4.x.yml) <br/>[![Scrutinizer Code Quality](https://scrutinizer-ci.com/g/DamienHarper/auditor-bundle/badges/quality-score.png?b=4.x)](https://scrutinizer-ci.com/g/DamienHarper/auditor-bundle/?branch=4.x)                                                                                                                                                                               |
-| 3.x     | End of life                 | PHP >= 7.1, Symfony >= 3.4 |                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                |
-| 2.x     | End of life                 | PHP >= 7.1, Symfony >= 3.4 |                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                |
-| 1.x     | End of life                 | PHP >= 7.1, Symfony >= 3.4 |                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                |
+## Requirements
 
-Changelog is available [here](https://damienharper.github.io/auditor-docs/docs/auditor-bundle/release-notes.html)
+- PHP >= 8.2
+- Symfony >= 6.4
+- Doctrine ORM >= 3.1
 
 
 ## Usage
-Once [installed](https://damienharper.github.io/auditor-docs/docs/auditor-bundle/installation.html) and [configured](https://damienharper.github.io/auditor-docs/docs/auditor-bundle/configuration/general.html), any database change 
+Once [installed](https://damienharper.github.io/auditor-docs/docs/auditor-bundle/installation.html) and [configured](https://damienharper.github.io/auditor-docs/docs/auditor-bundle/configuration/general.html), any database change
 affecting audited entities will be logged to audit logs automatically.
-Also, running schema update or similar will automatically setup audit logs for every 
+Also, running schema update or similar will automatically setup audit logs for every
 new auditable entity.
 
 
 ## Contributing
-`auditor-bundle` is an open source project. Contributions made by the community are welcome. 
+
+<details>
+<summary>Contribution guidelines</summary>
+
+`auditor-bundle` is an open source project. Contributions made by the community are welcome.
 Send me your ideas, code reviews, pull requests and feature requests to help us improve this project.
 
-Do not forget to provide unit tests when contributing to this project. 
+Do not forget to provide unit tests when contributing to this project.
 To do so, follow instructions in this dedicated [README](tests/README.md)
+
+</details>
 
 
 ## Credits
-- Thanks to [all contributors](https://github.com/DamienHarper/auditor-bundle/graphs/contributors)
+- Original bundle by [Damien Harper](https://github.com/DamienHarper)
+- Thanks to [all contributors](https://github.com/DamienHarper/auditor-bundle/graphs/contributors) to the original project
 
 
 ## License

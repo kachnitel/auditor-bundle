@@ -1,15 +1,18 @@
 # Fork Extensions for auditor-bundle
 
 This is a fork of [DamienHarper/auditor-bundle](https://github.com/DamienHarper/auditor-bundle)
-with custom extensions for the barrel-manager application.
+with additional features for audit context, snapshots, and admin integration.
 
 ## Added Features
 
 ### 1. AuditContext - Request-Scoped Context Service
 
-Allows passing contextual information (notes, reasons) to audit entries.
+Request-scoped service for adding metadata (notes, reasons) to audit entries.
 
 **Location:** `src/Service/AuditContext.php`
+
+<details>
+<summary><strong>View usage example</strong></summary>
 
 **Use Case:** When adjusting stock, record why the adjustment was made.
 
@@ -49,6 +52,8 @@ class ProductController
 }
 ```
 
+</details>
+
 ### 2. AuditContextSubscriber - Event Integration
 
 Automatically injects the AuditContext into audit payloads via LifecycleEvent.
@@ -66,6 +71,9 @@ Automatically injects the AuditContext into audit payloads via LifecycleEvent.
 Creates EVENT-type audit entries for domain events (not just entity changes).
 
 **Location:** `src/Service/EventAuditService.php`
+
+<details>
+<summary><strong>View usage example</strong></summary>
 
 **Use Case:** Record domain events like "order.created", "task.completed" that represent
 business actions rather than simple field changes.
@@ -109,11 +117,58 @@ class OrderService
 - `ip`: Client IP address
 - `created_at`: Timestamp
 
-### 4. Snapshot - Point-in-Time Entity Reconstruction
+</details>
+
+### 4. AuditReader - Query Interface for Audit Entries
+
+Query interface for retrieving and filtering audit entries.
+
+**Location:** `src/Service/AuditReader.php`
+
+<details>
+<summary><strong>View usage example</strong></summary>
+
+**Use Case:** Query audit history with filters for entity type, IDs, date ranges, and operations.
+
+**Usage:**
+```php
+use DH\AuditorBundle\Service\AuditReader;
+
+class AuditController
+{
+    public function getProductHistory(AuditReader $reader, Product $product): array
+    {
+        // Get all audit entries for a specific product
+        return $reader->getAudits(Product::class, [$product->getId()]);
+
+        // With date range filter
+        return $reader->getAudits(
+            Product::class,
+            [$product->getId()],
+            startDate: new \DateTime('-30 days'),
+            endDate: new \DateTime()
+        );
+
+        // Filter by operation type
+        return $reader->getAudits(
+            Product::class,
+            [$product->getId()],
+            operations: ['update']
+        );
+    }
+}
+```
+
+</details>
+
+### 5. Snapshot - Point-in-Time Entity Reconstruction
 
 Reconstructs entity property values at any point in history.
 
 **Location:** `src/Service/Snapshot.php`
+
+<details>
+<summary><strong>View usage example</strong></summary>
 
 **Use Case:** Generate historical reports showing what values entities had at a specific date.
 
@@ -150,45 +205,40 @@ class InventoryReportService
 - Removed collection items cannot be restored (no reference available)
 - Entity must currently exist in the database
 
+</details>
+
+### 6. Admin Bundle Integration
+
+Automatic integration with `kachna/admin-bundle` for viewing audit logs.
+
+**Location:** `src/Admin/`, `src/DependencyInjection/AdminBundleIntegrationPass.php`
+
+<details>
+<summary><strong>View details</strong></summary>
+
+**Features:**
+- **Preview Changes**: View entity modifications directly in admin list views with before/after comparison
+- **Audit Data Sources**: Auto-registered admin resources when admin-bundle is installed
+- **Filtering & Pagination**: Browse audit logs with comprehensive filtering options
+
+**How it works:**
+1. `AdminBundleIntegrationPass` detects if admin-bundle is installed
+2. Auto-registers `AuditDataSource` and `AuditDataSourceFactory`
+3. Admin UI provides filtering by entity type, date range, user, and operation
+4. List views can preview changes before navigating to full audit details
+
+</details>
+
 ## Service Registration
 
-Services are registered in `src/Resources/config/services.yaml`:
+All services are automatically registered via `src/Resources/config/services.yaml` and available for dependency injection.
 
-```yaml
-# AuditContext - request-scoped
-DH\AuditorBundle\Service\AuditContext:
-  class: DH\AuditorBundle\Service\AuditContext
+## Requirements
 
-# AuditContextSubscriber - auto-injects context
-DH\AuditorBundle\Event\AuditContextSubscriber:
-  class: DH\AuditorBundle\Event\AuditContextSubscriber
-  arguments: ['@DH\AuditorBundle\Service\AuditContext']
-  tags:
-    - { name: kernel.event_subscriber }
-
-# EventAuditService - for domain events
-DH\AuditorBundle\Service\EventAuditService:
-  class: DH\AuditorBundle\Service\EventAuditService
-  arguments:
-    - '@DH\Auditor\Auditor'
-    - '@DH\Auditor\Provider\Doctrine\DoctrineProvider'
-    - '@doctrine.orm.entity_manager'
-    - '@DH\AuditorBundle\Service\AuditContext'
-
-# Snapshot - point-in-time reconstruction
-DH\AuditorBundle\Service\Snapshot:
-  class: DH\AuditorBundle\Service\Snapshot
-  arguments:
-    - '@DH\Auditor\Provider\Doctrine\Persistence\Reader\Reader'
-    - '@doctrine.orm.entity_manager'
-```
-
-## Compatibility
-
-Based on upstream v6.x (master branch). Compatible with:
+Based on upstream v6.x (master branch):
 - PHP >= 8.2
-- Symfony >= 5.4
-- Doctrine ORM >= 2.13
+- Symfony >= 6.4
+- Doctrine ORM >= 3.1
 
 ## Testing
 
