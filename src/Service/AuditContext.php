@@ -53,6 +53,27 @@ class AuditContext
     }
 
     /**
+     * Set the request ID for correlating audits from the same HTTP request.
+     */
+    public function setRequestId(string $requestId): self
+    {
+        $this->context ??= [];
+        $this->context['request_id'] = $requestId;
+
+        return $this;
+    }
+
+    /**
+     * Get the current request ID, if set.
+     */
+    public function getRequestId(): ?string
+    {
+        $requestId = $this->context['request_id'] ?? null;
+
+        return \is_string($requestId) ? $requestId : null;
+    }
+
+    /**
      * Get the current context, if any.
      *
      * @return array<string, mixed>|null

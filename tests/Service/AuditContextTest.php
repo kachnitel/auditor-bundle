@@ -91,4 +91,33 @@ final class AuditContextTest extends TestCase
 
         $this->assertFalse($this->context->has());
     }
+
+    public function testSetRequestId(): void
+    {
+        $this->context->setRequestId('abc-123-def');
+
+        $this->assertTrue($this->context->has());
+        $this->assertSame('abc-123-def', $this->context->getRequestId());
+        $this->assertSame(['request_id' => 'abc-123-def'], $this->context->get());
+    }
+
+    public function testGetRequestIdWhenNotSet(): void
+    {
+        $this->assertNull($this->context->getRequestId());
+    }
+
+    public function testRequestIdWithOtherContext(): void
+    {
+        $this->context
+            ->setNote('Manual adjustment')
+            ->setReason('inventory')
+            ->setRequestId('req-456');
+
+        $this->assertSame('req-456', $this->context->getRequestId());
+        $this->assertSame([
+            'note' => 'Manual adjustment',
+            'reason' => 'inventory',
+            'request_id' => 'req-456',
+        ], $this->context->get());
+    }
 }

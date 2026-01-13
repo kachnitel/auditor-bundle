@@ -93,6 +93,12 @@ services:
     tags:
       - { name: kernel.event_subscriber }
 
+  DH\AuditorBundle\Event\RequestIdSubscriber:
+    class: DH\AuditorBundle\Event\RequestIdSubscriber
+    arguments: ['@DH\AuditorBundle\Service\AuditContext']
+    tags:
+      - { name: kernel.event_subscriber }
+
   # EventAuditService - for creating EVENT-type audit entries
   DH\AuditorBundle\Service\EventAuditService:
     class: DH\AuditorBundle\Service\EventAuditService

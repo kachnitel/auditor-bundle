@@ -6,10 +6,15 @@ namespace DH\AuditorBundle\Service;
 
 use DateTimeInterface;
 use DH\Auditor\Model\Entry;
+use DH\Auditor\Provider\Doctrine\Configuration;
 use DH\Auditor\Provider\Doctrine\Persistence\Reader\Filter\DateRangeFilter;
 use DH\Auditor\Provider\Doctrine\Persistence\Reader\Filter\SimpleFilter;
 use DH\Auditor\Provider\Doctrine\Persistence\Reader\Query;
 use DH\Auditor\Provider\Doctrine\Persistence\Reader\Reader;
+use Doctrine\DBAL\Platforms\MariaDBPlatform;
+use Doctrine\DBAL\Platforms\MySQLPlatform;
+use Doctrine\DBAL\Platforms\PostgreSQLPlatform;
+use Doctrine\DBAL\Platforms\SQLitePlatform;
 
 /**
  * Service for querying audit entries using the Reader API.
@@ -97,5 +102,114 @@ class AuditReader
     public function getReader(): Reader
     {
         return $this->reader;
+    }
+
+    /**
+     * Find all audit entries that share the same request ID.
+     *
+     * Request ID is stored in the diffs JSON under @context.request_id.
+     * This method queries across all audited entity types.
+     *
+     * @return array<string, array<Entry>> Indexed by entity FQCN
+     */
+    public function findByRequestId(string $requestId): array
+    {
+        $provider = $this->reader->getProvider();
+        $configuration = $provider->getConfiguration();
+        $results = [];
+
+        if (!$configuration instanceof Configuration) {
+            return $results;
+        }
+
+        $entities = $configuration->getEntities();
+        foreach (array_keys($entities) as $entity) {
+            \assert(\is_string($entity));
+            try {
+                $audits = $this->findEntityAuditsByRequestId($entity, $requestId);
+                if ([] !== $audits) {
+                    $results[$entity] = $audits;
+                }
+            } catch (\Exception) {
+                // Skip entities that are not accessible or have errors
+            }
+        }
+
+        return $results;
+    }
+
+    /**
+     * Find audit entries for a specific entity by request ID.
+     *
+     * @return array<Entry>
+     */
+    public function findEntityAuditsByRequestId(string $entityClass, string $requestId): array
+    {
+        $provider = $this->reader->getProvider();
+        $tableName = $this->reader->getEntityAuditTableName($entityClass);
+
+        $storageService = $provider->getStorageServiceForEntity($entityClass);
+        $connection = $storageService->getEntityManager()->getConnection();
+        $platform = $connection->getDatabasePlatform();
+
+        // Build platform-specific JSON query
+        $jsonCondition = $this->buildJsonCondition($platform, 'diffs', '@context', 'request_id');
+
+        $sql = \sprintf(
+            'SELECT * FROM %s WHERE %s = ? ORDER BY created_at DESC, id DESC',
+            $tableName,
+            $jsonCondition
+        );
+
+        $result = $connection->executeQuery($sql, [$requestId]);
+
+        $timezone = new \DateTimeZone(
+            $provider->getAuditor()->getConfiguration()->getTimezone()
+        );
+
+        $entries = [];
+        foreach ($result->fetchAllAssociative() as $row) {
+            \assert(\is_string($row['created_at']));
+            $row['created_at'] = new \DateTimeImmutable($row['created_at'], $timezone);
+            $entries[] = Entry::fromArray($row);
+        }
+
+        return $entries;
+    }
+
+    /**
+     * Build platform-specific JSON field extraction SQL.
+     *
+     * @param object $platform The database platform
+     */
+    private function buildJsonCondition(object $platform, string $column, string $contextKey, string $fieldKey): string
+    {
+        // JSON path to @context.request_id
+        return match (true) {
+            $platform instanceof PostgreSQLPlatform => \sprintf(
+                "%s->'%s'->>'%s'",
+                $column,
+                $contextKey,
+                $fieldKey
+            ),
+            $platform instanceof MySQLPlatform, $platform instanceof MariaDBPlatform => \sprintf(
+                "JSON_UNQUOTE(JSON_EXTRACT(%s, '\$.\"%s\".\"%s\"'))",
+                $column,
+                $contextKey,
+                $fieldKey
+            ),
+            $platform instanceof SQLitePlatform => \sprintf(
+                "JSON_EXTRACT(%s, '\$.%s.%s')",
+                $column,
+                $contextKey,
+                $fieldKey
+            ),
+            default => \sprintf(
+                "JSON_UNQUOTE(JSON_EXTRACT(%s, '\$.\"%s\".\"%s\"'))",
+                $column,
+                $contextKey,
+                $fieldKey
+            ),
+        };
     }
 }
