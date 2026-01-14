@@ -4,7 +4,6 @@ declare(strict_types=1);
 
 namespace DH\AuditorBundle\Service;
 
-use DateTimeInterface;
 use DH\Auditor\Model\Entry;
 use DH\Auditor\Provider\Doctrine\Persistence\Reader\Filter\DateRangeFilter;
 use DH\Auditor\Provider\Doctrine\Persistence\Reader\Filter\SimpleFilter;
@@ -13,7 +12,6 @@ use DH\Auditor\Provider\Doctrine\Persistence\Reader\Reader;
 use Doctrine\Common\Collections\ArrayCollection;
 use Doctrine\Common\Collections\Collection;
 use Doctrine\ORM\EntityManagerInterface;
-use InvalidArgumentException;
 
 /**
  * Service for reconstructing entity state at a point in time.
@@ -35,12 +33,13 @@ class Snapshot
     /**
      * Get a single property value for a single entity at a specific point in time.
      *
-     * @param object $entity The entity to get historical state for
-     * @param DateTimeInterface $datetime The point in time to reconstruct
-     * @param string $property The property name to get
+     * @param object             $entity   The entity to get historical state for
+     * @param \DateTimeInterface $datetime The point in time to reconstruct
+     * @param string             $property The property name to get
+     *
      * @return mixed The property value at that point in time
      */
-    public function getPropertySnapshot(object $entity, DateTimeInterface $datetime, string $property): mixed
+    public function getPropertySnapshot(object $entity, \DateTimeInterface $datetime, string $property): mixed
     {
         $snapshot = $this->getPropertiesSnapshot([$entity], $datetime, [$property]);
         $id = $this->getEntityId($entity);
@@ -51,12 +50,13 @@ class Snapshot
     /**
      * Get entity properties at a specific point in time.
      *
-     * @param array<object> $entities Entities to get historical state for (must all be same class)
-     * @param DateTimeInterface $datetime The point in time to reconstruct
-     * @param array<string> $properties The property names to include
+     * @param array<object>      $entities   Entities to get historical state for (must all be same class)
+     * @param \DateTimeInterface $datetime   The point in time to reconstruct
+     * @param array<string>      $properties The property names to include
+     *
      * @return array<int|string, array<string, mixed>> Map of entityId => [property => value]
      */
-    public function getPropertiesSnapshot(array $entities, DateTimeInterface $datetime, array $properties): array
+    public function getPropertiesSnapshot(array $entities, \DateTimeInterface $datetime, array $properties): array
     {
         if ([] === $entities) {
             return [];
@@ -89,7 +89,7 @@ class Snapshot
                     continue;
                 }
 
-                if (!in_array($property, $properties, true)) {
+                if (!\in_array($property, $properties, true)) {
                     continue;
                 }
 
@@ -97,17 +97,22 @@ class Snapshot
 
                 // Handle collections
                 if ($this->isCollectionType($type)) {
+                    $currentValue = $result[$entityId][$property] ?? new ArrayCollection();
+
+                    /** @var Collection<int|string, object> $collection */
+                    $collection = $currentValue instanceof Collection ? $currentValue : new ArrayCollection();
                     $result[$entityId][$property] = $this->reverseCollectionDiff(
-                        $result[$entityId][$property] ?? new ArrayCollection(),
-                        $values
+                        $collection,
+                        \is_array($values) ? $values : []
                     );
+
                     continue;
                 }
 
                 // Handle scalars - auditor-bundle stores as [old, new]
                 if (isset($values['old'])) {
                     $result[$entityId][$property] = $this->convertValue($values['old'], $type);
-                } elseif (is_array($values) && count($values) === 2 && isset($values[0])) {
+                } elseif (\is_array($values) && 2 === \count($values) && isset($values[0])) {
                     // Alternative format: [oldValue, newValue]
                     $result[$entityId][$property] = $this->convertValue($values[0], $type);
                 }
@@ -122,6 +127,8 @@ class Snapshot
      *
      * @param array<object> $entities
      * @param array<string> $properties
+     * @param class-string  $class
+     *
      * @return array<int|string, array<string, mixed>>
      */
     private function getCurrentSnapshot(array $entities, array $properties, string $class): array
@@ -130,7 +137,7 @@ class Snapshot
 
         foreach ($entities as $entity) {
             if ($entity::class !== $class) {
-                throw new InvalidArgumentException(sprintf(
+                throw new \InvalidArgumentException(\sprintf(
                     'All entities must be of the same class. Expected %s but got %s',
                     $class,
                     $entity::class
@@ -151,13 +158,15 @@ class Snapshot
     /**
      * Get audits for the snapshot query.
      *
+     * @param class-string      $class
      * @param array<int|string> $entityIds
+     *
      * @return array<Entry>
      */
     private function getAuditsForSnapshot(
         string $class,
         array $entityIds,
-        DateTimeInterface $datetime,
+        \DateTimeInterface $datetime,
     ): array {
         // Get the configured timezone to match how auditor stores timestamps
         $timezone = new \DateTimeZone(
@@ -198,7 +207,9 @@ class Snapshot
     /**
      * Get property types for the entity class.
      *
+     * @param class-string  $class
      * @param array<string> $properties
+     *
      * @return array<string, string>
      */
     private function getPropertyTypes(string $class, array $properties): array
@@ -209,6 +220,7 @@ class Snapshot
         foreach ($properties as $property) {
             if (!$reflectionClass->hasProperty($property)) {
                 $types[$property] = 'mixed';
+
                 continue;
             }
 
@@ -227,16 +239,17 @@ class Snapshot
 
     private function isCollectionType(string $type): bool
     {
-        return $type === Collection::class
+        return Collection::class === $type
             || is_subclass_of($type, Collection::class)
-            || $type === ArrayCollection::class;
+            || ArrayCollection::class === $type;
     }
 
     /**
      * Reverse a collection diff (undo add/remove operations).
      *
      * @param Collection<int|string, object> $collection
-     * @param array<string, mixed> $values
+     * @param array<string, mixed>           $values
+     *
      * @return Collection<int|string, object>
      */
     private function reverseCollectionDiff(Collection $collection, array $values): Collection
@@ -244,14 +257,14 @@ class Snapshot
         $collection = clone $collection;
 
         // If items were added, remove them
-        if (isset($values['added']) && is_array($values['added'])) {
+        if (isset($values['added']) && \is_array($values['added'])) {
             foreach ($values['added'] as $added) {
                 $id = $added['id'] ?? null;
                 if (null === $id) {
                     continue;
                 }
                 $entity = $collection->findFirst(
-                    fn ($key, $item) => $this->getEntityId($item) === $id
+                    fn (int|string $key, object $item): bool => $this->getEntityId($item) === $id
                 );
                 if (null !== $entity) {
                     $collection->removeElement($entity);
@@ -281,28 +294,51 @@ class Snapshot
                 return $value;
             }
             // Otherwise try to create from backing value
-            return $type::tryFrom($value) ?? $value;
+            if (\is_int($value) || \is_string($value)) {
+                return $type::tryFrom($value) ?? $value;
+            }
+
+            return $value;
         }
 
-        return match ($type) {
-            'int', 'integer' => (int) $value,
-            'float', 'double' => (float) $value,
-            'bool', 'boolean' => (bool) $value,
-            'string' => (string) $value,
-            'array' => (array) $value,
-            \DateTimeInterface::class, \DateTime::class, \DateTimeImmutable::class => $value instanceof \DateTimeInterface
-                ? $value
-                : new \DateTimeImmutable($value),
-            default => $value,
-        };
+        // Handle DateTime types first (before scalar check, as string dates should be converted)
+        if (\in_array($type, [\DateTimeInterface::class, \DateTime::class, \DateTimeImmutable::class], true)) {
+            if ($value instanceof \DateTimeInterface) {
+                return $value;
+            }
+            if (\is_string($value)) {
+                return new \DateTimeImmutable($value);
+            }
+
+            return $value;
+        }
+
+        // Handle array type
+        if ('array' === $type) {
+            return \is_array($value) ? $value : [$value];
+        }
+
+        // Handle scalar conversions with type safety
+        if (\is_scalar($value)) {
+            return match ($type) {
+                'int', 'integer' => (int) $value,
+                'float', 'double' => (float) $value,
+                'bool', 'boolean' => (bool) $value,
+                'string' => (string) $value,
+                default => $value,
+            };
+        }
+
+        return $value;
     }
 
     private function getEntityId(object $entity): string
     {
         $meta = $this->entityManager->getClassMetadata($entity::class);
         $identifierValues = $meta->getIdentifierValues($entity);
+        $id = reset($identifierValues);
 
-        return (string) reset($identifierValues);
+        return \is_scalar($id) ? (string) $id : '';
     }
 
     private function getPropertyValue(object $entity, string $property): mixed

@@ -1,8 +1,11 @@
 {# Inline preview of audit changes for table display - similar to old "updated" block #}
-{# Usage: include '@DHAuditor/Admin/Audit/_changes-preview.html.twig' with {entry: entry, item: item} #}
+{# Usage: include '@DHAuditor/Admin/Audit/_changes-preview.html.twig' with {entry: entry, item: item, dataSource: dataSource} #}
 
 {% set diffs = item.getDiffs() %}
+{% set diffsWithMeta = item.getDiffs(true) %}
 {% set entryId = item.getId() %}
+{% set requestId = diffsWithMeta['@context']['request_id']|default(null) %}
+{% set hasTimelineSupport = dataSource is defined and dataSource.hasTimelineSupport() %}
 
 {% if diffs is empty %}
     <span class="text-muted">No changes</span>
@@ -135,7 +138,25 @@
                         {% endfor %}
                     </div>
                 </div>
-                <div class="modal-footer">
+                <div class="modal-footer d-flex justify-content-between">
+                    <div>
+                        {% if hasTimelineSupport %}
+                            {% if requestId %}
+                                {# Link to filter by request_id - shows all audits from same HTTP request #}
+                                <a href="?columnFilters[request_id]={{ requestId|url_encode }}" class="btn btn-outline-info btn-sm" title="Show all changes from the same HTTP request">
+                                    <span class="material-icons align-middle" style="font-size: 1rem;">link</span>
+                                    View Related ({{ requestId[:8] }}...)
+                                </a>
+                            {% endif %}
+                            {% if item.getUsername() and item.getUserId() %}
+                                {# Link to filter by user #}
+                                <a href="?columnFilters[blame_user]={{ item.getUserId()|url_encode }}" class="btn btn-outline-primary btn-sm ms-1" title="Show other changes by this user">
+                                    <span class="material-icons align-middle" style="font-size: 1rem;">timeline</span>
+                                    User Timeline
+                                </a>
+                            {% endif %}
+                        {% endif %}
+                    </div>
                     <button type="button" class="btn btn-secondary" data-bs-dismiss="modal">Close</button>
                 </div>
             </div>

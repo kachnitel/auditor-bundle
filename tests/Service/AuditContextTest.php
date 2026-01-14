@@ -57,7 +57,8 @@ final class AuditContextTest extends TestCase
     {
         $this->context
             ->setNote('Adjustment note')
-            ->setReason('sale');
+            ->setReason('sale')
+        ;
 
         $this->assertTrue($this->context->has());
         $this->assertSame([
@@ -111,7 +112,8 @@ final class AuditContextTest extends TestCase
         $this->context
             ->setNote('Manual adjustment')
             ->setReason('inventory')
-            ->setRequestId('req-456');
+            ->setRequestId('req-456')
+        ;
 
         $this->assertSame('req-456', $this->context->getRequestId());
         $this->assertSame([

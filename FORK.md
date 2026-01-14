@@ -139,21 +139,21 @@ class AuditController
     public function getProductHistory(AuditReader $reader, Product $product): array
     {
         // Get all audit entries for a specific product
-        return $reader->getAudits(Product::class, [$product->getId()]);
+        return $reader->findByEntityClass(Product::class, [$product->getId()]);
 
         // With date range filter
-        return $reader->getAudits(
+        return $reader->findByEntityClass(
             Product::class,
-            [$product->getId()],
-            startDate: new \DateTime('-30 days'),
-            endDate: new \DateTime()
+            ids: [$product->getId()],
+            from: new \DateTime('-30 days'),
+            to: new \DateTime()
         );
 
         // Filter by operation type
-        return $reader->getAudits(
+        return $reader->findByEntityClass(
             Product::class,
-            [$product->getId()],
-            operations: ['update']
+            ids: [$product->getId()],
+            type: 'update'
         );
     }
 }
@@ -161,7 +161,112 @@ class AuditController
 
 </details>
 
-### 5. Snapshot - Point-in-Time Entity Reconstruction
+### 5. Request ID Tracking - Correlate Audits from Same Request
+
+Automatically captures `X-Request-Id` header (or generates UUID v4) to correlate all
+audit entries created during the same HTTP request.
+
+**Location:** `src/Event/RequestIdSubscriber.php`
+
+<details>
+<summary><strong>View usage example</strong></summary>
+
+**Use Case:** When viewing an audit entry, find all other changes that happened in the
+same HTTP request (e.g., updating an order also updated related inventory).
+
+**How it works:**
+1. `RequestIdSubscriber` runs early on `kernel.request` (priority 255)
+2. Captures `X-Request-Id` header or generates a UUID v4
+3. Stores it via `AuditContext->setRequestId()`
+4. All audits in the request include the ID in `@context.request_id`
+
+**Usage:**
+```php
+use DH\AuditorBundle\Service\AuditReader;
+
+class AuditController
+{
+    public function viewRelatedChanges(AuditReader $reader, string $requestId): array
+    {
+        // Find all audits from the same HTTP request, grouped by entity class
+        return $reader->findByRequestId($requestId);
+        // Returns: ['App\Entity\Order' => [Entry, ...], 'App\Entity\Product' => [Entry, ...]]
+    }
+}
+```
+
+**Storage:** Request ID is stored in the `diffs` JSON under `@context.request_id`:
+```json
+{
+    "status": {"old": "pending", "new": "confirmed"},
+    "@context": {
+        "request_id": "550e8400-e29b-41d4-a716-446655440000"
+    }
+}
+```
+
+**Extracting Request ID from an Entry:**
+```php
+$entry = $audits[0];
+$diffs = $entry->getDiffs(includeMedadata: true);
+$requestId = $diffs['@context']['request_id'] ?? null;
+```
+
+</details>
+
+### 6. User Timeline - View Related User Activity
+
+Query audit entries from the same user within a time window around a reference entry.
+
+**Location:** `src/Service/AuditReader.php` (`findUserTimeline` method)
+
+<details>
+<summary><strong>View usage example</strong></summary>
+
+**Use Case:** When investigating an audit entry, see what else the user did before and
+after that action. Optionally include system events (async/command execution).
+
+**Usage:**
+```php
+use DH\AuditorBundle\Service\AuditReader;
+use DH\Auditor\Model\Entry;
+
+class AuditController
+{
+    public function viewUserTimeline(AuditReader $reader, Entry $referenceEntry): array
+    {
+        // Get all audits by the same user within 5 minutes (default)
+        $timeline = $reader->findUserTimeline($referenceEntry);
+
+        // Custom time window (10 minutes before/after)
+        $timeline = $reader->findUserTimeline($referenceEntry, windowMinutes: 10);
+
+        // Include system events (async jobs, commands with no user)
+        $timeline = $reader->findUserTimeline(
+            $referenceEntry,
+            windowMinutes: 5,
+            includeSystemEvents: true
+        );
+
+        // Returns: ['App\Entity\Order' => [Entry, ...], 'App\Entity\Product' => [Entry, ...]]
+        return $timeline;
+    }
+}
+```
+
+**Parameters:**
+- `$referenceEntry`: The audit entry to build the timeline around
+- `$windowMinutes`: Minutes before and after to include (default: 5)
+- `$includeSystemEvents`: Include audits with no user (async/command execution)
+
+**Behavior:**
+- Groups results by entity class
+- Orders entries chronologically (oldest first)
+- If reference entry has no user, shows only system events in the time range
+
+</details>
+
+### 7. Snapshot - Point-in-Time Entity Reconstruction
 
 Reconstructs entity property values at any point in history.
 
@@ -207,7 +312,7 @@ class InventoryReportService
 
 </details>
 
-### 6. Admin Bundle Integration
+### 8. Admin Bundle Integration
 
 Automatic integration with `kachna/admin-bundle` for viewing audit logs.
 
@@ -242,6 +347,8 @@ Based on upstream v6.x (master branch):
 
 ## Testing
 
-Unit tests are provided in `tests/`:
+Tests are provided in `tests/`:
 - `tests/Service/AuditContextTest.php` - AuditContext unit tests
+- `tests/Service/AuditReaderTest.php` - AuditReader integration tests (findByEntityClass, findUserTimeline, findByRequestId)
 - `tests/Event/AuditContextSubscriberTest.php` - Subscriber integration tests
+- `tests/Event/RequestIdSubscriberTest.php` - Request ID tracking tests

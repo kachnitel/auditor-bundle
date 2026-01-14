@@ -9,7 +9,7 @@ namespace Kachnitel\AdminBundle\DataSource;
  *
  * @internal
  */
-class PaginatedResult
+final class PaginatedResult
 {
     /**
      * @param array<int, object> $items

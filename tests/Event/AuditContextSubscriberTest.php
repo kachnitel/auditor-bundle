@@ -88,7 +88,7 @@ final class AuditContextSubscriberTest extends TestCase
             'diffs' => $diffs ?? '{}',
             'blame_id' => '1',
             'blame_user' => 'test',
-            'blame_user_fqdn' => 'App\\Entity\\User',
+            'blame_user_fqdn' => 'App\Entity\User',
             'blame_user_firewall' => 'main',
             'ip' => '127.0.0.1',
             'created_at' => '2024-01-01 00:00:00.000000',

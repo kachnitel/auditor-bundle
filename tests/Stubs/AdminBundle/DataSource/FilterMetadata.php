@@ -9,13 +9,13 @@ namespace Kachnitel\AdminBundle\DataSource;
  *
  * @internal
  */
-class FilterMetadata
+final class FilterMetadata
 {
     public function __construct(
         public readonly string $name,
         public readonly string $type,
         public readonly string $label,
-        /** @var array<int, string>|null */
+        /** @var null|array<int, string> */
         public readonly ?array $choices = null,
         public readonly ?string $placeholder = null,
         public readonly ?int $priority = null,

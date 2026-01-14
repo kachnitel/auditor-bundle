@@ -11,6 +11,7 @@ use DH\Auditor\Provider\Doctrine\Persistence\Reader\Query;
 use DH\Auditor\Provider\Doctrine\Persistence\Reader\Reader;
 use DH\AuditorBundle\Helper\DiffFormatter;
 use DH\AuditorBundle\Helper\UrlHelper;
+use DH\AuditorBundle\Service\AuditReader;
 use Kachnitel\AdminBundle\DataSource\ColumnMetadata;
 use Kachnitel\AdminBundle\DataSource\DataSourceInterface;
 use Kachnitel\AdminBundle\DataSource\FilterMetadata;
@@ -32,16 +33,17 @@ class AuditDataSource implements DataSourceInterface
     public function __construct(
         private readonly Reader $reader,
         private readonly string $entityClass,
+        private readonly ?AuditReader $auditReader = null,
     ) {}
 
     public function getIdentifier(): string
     {
-        return 'audit-' . UrlHelper::namespaceToParam($this->entityClass);
+        return 'audit-'.UrlHelper::namespaceToParam($this->entityClass);
     }
 
     public function getLabel(): string
     {
-        return 'Audit: ' . $this->getShortName();
+        return 'Audit: '.$this->getShortName();
     }
 
     public function getIcon(): ?string
@@ -64,6 +66,13 @@ class AuditDataSource implements DataSourceInterface
                 sortable: false,
                 template: '@DHAuditor/Admin/Audit/_changes-preview.html.twig',
             ),
+            'actions' => new ColumnMetadata(
+                name: 'actions',
+                label: '',
+                type: 'actions',
+                sortable: false,
+                template: '@DHAuditor/Admin/Audit/_row-actions.html.twig',
+            ),
         ];
     }
 
@@ -82,6 +91,7 @@ class AuditDataSource implements DataSourceInterface
             'created_at' => FilterMetadata::dateRange('created_at', 'Date', 3),
             'blame_user' => FilterMetadata::text('blame_user', 'User', 'Search user...', 4),
             'transaction_hash' => FilterMetadata::text('transaction_hash', 'Transaction', 'Transaction hash...', 5),
+            'request_id' => FilterMetadata::text('request_id', 'Request ID', 'Request correlation ID...', 6),
         ];
     }
 
@@ -108,6 +118,16 @@ class AuditDataSource implements DataSourceInterface
         int $page,
         int $itemsPerPage
     ): PaginatedResult {
+        // Special case: request_id filter requires JSON querying via AuditReader
+        if (!empty($filters['request_id']) && \is_string($filters['request_id']) && null !== $this->auditReader) {
+            return $this->queryByRequestId($filters['request_id'], $page, $itemsPerPage);
+        }
+
+        // Special case: blame_user filter uses case-insensitive LIKE search via AuditReader
+        if (!empty($filters['blame_user']) && \is_string($filters['blame_user']) && null !== $this->auditReader) {
+            return $this->queryByUserSearch($filters['blame_user'], $filters, $page, $itemsPerPage);
+        }
+
         $query = $this->reader->createQuery($this->entityClass);
 
         // Apply filters
@@ -146,7 +166,7 @@ class AuditDataSource implements DataSourceInterface
         );
     }
 
-    public function find(string|int $id): ?object
+    public function find(int|string $id): ?object
     {
         $query = $this->reader->createQuery($this->entityClass);
         $query->addFilter(new SimpleFilter(Query::ID, $id));
@@ -167,9 +187,10 @@ class AuditDataSource implements DataSourceInterface
         return 'id';
     }
 
-    public function getItemId(object $item): string|int
+    public function getItemId(object $item): int|string
     {
         \assert($item instanceof Entry);
+
         return $item->getId() ?? 0;
     }
 
@@ -207,7 +228,7 @@ class AuditDataSource implements DataSourceInterface
      */
     public function getShortName(): string
     {
-        if ($this->shortName === null) {
+        if (null === $this->shortName) {
             $parts = explode('\\', $this->entityClass);
             $this->shortName = end($parts);
         }
@@ -223,6 +244,7 @@ class AuditDataSource implements DataSourceInterface
     public function getChangePreview(Entry $entry): array
     {
         $diffs = $entry->getDiffs();
+
         return DiffFormatter::createPreview($diffs);
     }
 
@@ -234,7 +256,204 @@ class AuditDataSource implements DataSourceInterface
     public function getDetailedDiffs(Entry $entry): array
     {
         $diffs = $entry->getDiffs(includeMedadata: true);
+
         return DiffFormatter::getDetailedStructure($diffs);
+    }
+
+    /**
+     * Get the request ID from an audit entry's context.
+     */
+    public function getRequestId(Entry $entry): ?string
+    {
+        $diffs = $entry->getDiffs(includeMedadata: true);
+        $requestId = $diffs['@context']['request_id'] ?? null;
+
+        return \is_string($requestId) ? $requestId : null;
+    }
+
+    /**
+     * Find all audit entries that share the same request ID.
+     *
+     * @return array<string, array<Entry>> Indexed by entity FQCN
+     */
+    public function findRelatedByRequest(Entry $entry): array
+    {
+        if (null === $this->auditReader) {
+            return [];
+        }
+
+        $requestId = $this->getRequestId($entry);
+        if (null === $requestId) {
+            return [];
+        }
+
+        return $this->auditReader->findByRequestId($requestId);
+    }
+
+    /**
+     * Find audit entries from the same user within a time window.
+     *
+     * @return array<string, array<Entry>> Indexed by entity FQCN
+     */
+    public function findUserTimeline(Entry $entry, int $windowMinutes = 5, bool $includeSystemEvents = false): array
+    {
+        if (null === $this->auditReader) {
+            return [];
+        }
+
+        return $this->auditReader->findUserTimeline($entry, $windowMinutes, $includeSystemEvents);
+    }
+
+    /**
+     * Check if timeline features are available.
+     */
+    public function hasTimelineSupport(): bool
+    {
+        return null !== $this->auditReader;
+    }
+
+    /**
+     * Query audit entries by request ID.
+     *
+     * This is a special query path that uses JSON-based filtering
+     * to find entries sharing the same request correlation ID.
+     */
+    private function queryByRequestId(string $requestId, int $page, int $itemsPerPage): PaginatedResult
+    {
+        \assert(null !== $this->auditReader);
+
+        $entries = $this->auditReader->findEntityAuditsByRequestId($this->entityClass, $requestId);
+        $total = \count($entries);
+
+        // Clamp page to valid range
+        $page = max(1, $page);
+        $totalPages = $total > 0 ? (int) ceil($total / $itemsPerPage) : 0;
+        if ($totalPages > 0 && $page > $totalPages) {
+            $page = $totalPages;
+        }
+
+        // Apply pagination manually
+        $offset = ($page - 1) * $itemsPerPage;
+        $entries = \array_slice($entries, $offset, $itemsPerPage);
+
+        return new PaginatedResult(
+            items: $entries,
+            totalItems: $total,
+            currentPage: $page,
+            itemsPerPage: $itemsPerPage,
+        );
+    }
+
+    /**
+     * Query audit entries by user search (case-insensitive LIKE on blame_user).
+     *
+     * @param array<string, mixed> $filters Additional filters to apply in memory
+     */
+    private function queryByUserSearch(string $userSearch, array $filters, int $page, int $itemsPerPage): PaginatedResult
+    {
+        \assert(null !== $this->auditReader);
+
+        $entries = $this->auditReader->findEntityAuditsByUserSearch($this->entityClass, $userSearch);
+
+        // Apply additional filters in memory
+        $entries = $this->filterEntriesInMemory($entries, $filters);
+
+        $total = \count($entries);
+
+        // Clamp page to valid range
+        $page = max(1, $page);
+        $totalPages = $total > 0 ? (int) ceil($total / $itemsPerPage) : 0;
+        if ($totalPages > 0 && $page > $totalPages) {
+            $page = $totalPages;
+        }
+
+        // Apply pagination manually
+        $offset = ($page - 1) * $itemsPerPage;
+        $entries = \array_slice($entries, $offset, $itemsPerPage);
+
+        return new PaginatedResult(
+            items: $entries,
+            totalItems: $total,
+            currentPage: $page,
+            itemsPerPage: $itemsPerPage,
+        );
+    }
+
+    /**
+     * Filter entries in memory for combined filter queries.
+     *
+     * @param array<Entry>         $entries
+     * @param array<string, mixed> $filters
+     *
+     * @return array<Entry>
+     */
+    private function filterEntriesInMemory(array $entries, array $filters): array
+    {
+        $timezone = new \DateTimeZone(
+            $this->reader->getProvider()->getAuditor()->getConfiguration()->getTimezone()
+        );
+
+        return array_values(array_filter($entries, function (Entry $entry) use ($filters, $timezone): bool {
+            // Object ID filter
+            if (!empty($filters['object_id']) && $entry->getObjectId() !== $filters['object_id']) {
+                return false;
+            }
+
+            // Type filter
+            if (!empty($filters['type'])) {
+                $types = \is_array($filters['type']) ? $filters['type'] : [$filters['type']];
+                if (!\in_array($entry->getType(), $types, true)) {
+                    return false;
+                }
+            }
+
+            // Date range filter (handles both array and JSON string formats)
+            if (!empty($filters['created_at'])) {
+                $createdAt = $entry->getCreatedAt();
+                if (null === $createdAt) {
+                    return false;
+                }
+
+                $dateFilter = $filters['created_at'];
+                // Handle JSON string format from URL (e.g., '{"from":"2024-01-01","to":"2024-01-02"}')
+                if (\is_string($dateFilter)) {
+                    $decoded = json_decode($dateFilter, true);
+                    $dateFilter = \is_array($decoded) ? $decoded : [];
+                }
+
+                if (!\is_array($dateFilter)) {
+                    return true; // Invalid format, skip filter
+                }
+
+                $fromStr = $dateFilter['from'] ?? '';
+                $toStr = $dateFilter['to'] ?? '';
+
+                if (!empty($fromStr)) {
+                    $from = str_contains($fromStr, ':')
+                        ? new \DateTimeImmutable($fromStr, $timezone)
+                        : new \DateTimeImmutable($fromStr.' 00:00:00', $timezone);
+                    if ($createdAt < $from) {
+                        return false;
+                    }
+                }
+
+                if (!empty($toStr)) {
+                    $to = str_contains($toStr, ':')
+                        ? new \DateTimeImmutable($toStr, $timezone)
+                        : new \DateTimeImmutable($toStr.' 23:59:59', $timezone);
+                    if ($createdAt > $to) {
+                        return false;
+                    }
+                }
+            }
+
+            // Transaction hash filter
+            if (!empty($filters['transaction_hash']) && $entry->getTransactionHash() !== $filters['transaction_hash']) {
+                return false;
+            }
+
+            return true;
+        }));
     }
 
     /**
@@ -259,24 +478,46 @@ class AuditDataSource implements DataSourceInterface
             $query->addFilter(new SimpleFilter(Query::TYPE, $types));
         }
 
-        // Date range filter (from created_at filter with daterange type)
+        // Date range filter (handles both array and JSON string formats)
         if (!empty($filters['created_at'])) {
             $dateFilter = $filters['created_at'];
+
+            // Handle JSON string format from URL (e.g., '{"from":"2024-01-01","to":"2024-01-02"}')
+            if (\is_string($dateFilter)) {
+                $decoded = json_decode($dateFilter, true);
+                $dateFilter = \is_array($decoded) ? $decoded : null;
+            }
+
             if (\is_array($dateFilter)) {
-                $from = !empty($dateFilter['from'])
-                    ? new \DateTimeImmutable($dateFilter['from'], $timezone)
-                    : new \DateTimeImmutable('1970-01-01', $timezone);
-                $to = !empty($dateFilter['to'])
-                    ? new \DateTimeImmutable($dateFilter['to'] . ' 23:59:59', $timezone)
-                    : new \DateTimeImmutable('+100 years', $timezone);
+                $fromStr = $dateFilter['from'] ?? '';
+                $toStr = $dateFilter['to'] ?? '';
+
+                // Handle full datetime or date-only formats
+                if (!empty($fromStr)) {
+                    // If it's just a date (no time component), use start of day
+                    $from = str_contains($fromStr, ':')
+                        ? new \DateTimeImmutable($fromStr, $timezone)
+                        : new \DateTimeImmutable($fromStr.' 00:00:00', $timezone);
+                } else {
+                    $from = new \DateTimeImmutable('1970-01-01', $timezone);
+                }
+
+                if (!empty($toStr)) {
+                    // If it's just a date (no time component), use end of day
+                    $to = str_contains($toStr, ':')
+                        ? new \DateTimeImmutable($toStr, $timezone)
+                        : new \DateTimeImmutable($toStr.' 23:59:59', $timezone);
+                } else {
+                    $to = new \DateTimeImmutable('+100 years', $timezone);
+                }
+
                 $query->addFilter(new DateRangeFilter(Query::CREATED_AT, $from, $to));
             }
         }
 
-        // User filter (searches blame_id)
+        // User filter - fallback to exact blame_id match when AuditReader not available
+        // (When AuditReader IS available, this is handled via queryByUserSearch() for LIKE search)
         if (!empty($filters['blame_user'])) {
-            // Note: The auditor Query only supports exact match on blame_id
-            // For text search, we'd need LIKE support which isn't available
             $query->addFilter(new SimpleFilter(Query::USER_ID, $filters['blame_user']));
         }
 

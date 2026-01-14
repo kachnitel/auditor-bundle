@@ -4,7 +4,6 @@ declare(strict_types=1);
 
 namespace DH\AuditorBundle\Service;
 
-use DateTimeInterface;
 use DH\Auditor\Model\Entry;
 use DH\Auditor\Provider\Doctrine\Configuration;
 use DH\Auditor\Provider\Doctrine\Persistence\Reader\Filter\DateRangeFilter;
@@ -34,20 +33,21 @@ class AuditReader
     /**
      * Find audit entries for an entity class within a date range.
      *
-     * @param string $entityClass The entity class name
-     * @param array<int|string>|null $ids Entity IDs to filter (null for all)
-     * @param DateTimeInterface|null $from Start date (inclusive)
-     * @param DateTimeInterface|null $to End date (exclusive)
-     * @param string|null $type Audit type filter ('insert', 'update', 'delete', 'associate', 'dissociate')
-     * @param string $orderBy Field to order by (id, created_at, object_id)
-     * @param string $order Sort direction (ASC, DESC)
+     * @param string                  $entityClass The entity class name
+     * @param null|array<int|string>  $ids         Entity IDs to filter (null for all)
+     * @param null|\DateTimeInterface $from        Start date (inclusive)
+     * @param null|\DateTimeInterface $to          End date (exclusive)
+     * @param null|string             $type        Audit type filter ('insert', 'update', 'delete', 'associate', 'dissociate')
+     * @param string                  $orderBy     Field to order by (id, created_at, object_id)
+     * @param string                  $order       Sort direction (ASC, DESC)
+     *
      * @return array<Entry>
      */
     public function findByEntityClass(
         string $entityClass,
         ?array $ids = null,
-        ?DateTimeInterface $from = null,
-        ?DateTimeInterface $to = null,
+        ?\DateTimeInterface $from = null,
+        ?\DateTimeInterface $to = null,
         ?string $type = null,
         string $orderBy = 'id',
         string $order = 'DESC'
@@ -91,7 +91,7 @@ class AuditReader
             'object_id', 'objectId', 'entityId' => Query::OBJECT_ID,
             default => Query::ID,
         };
-        $query->addOrderBy($queryOrderBy, strtoupper($order));
+        $query->addOrderBy($queryOrderBy, mb_strtoupper($order));
 
         return $query->execute();
     }
@@ -125,6 +125,7 @@ class AuditReader
         $entities = $configuration->getEntities();
         foreach (array_keys($entities) as $entity) {
             \assert(\is_string($entity));
+
             try {
                 $audits = $this->findEntityAuditsByRequestId($entity, $requestId);
                 if ([] !== $audits) {
@@ -166,6 +167,161 @@ class AuditReader
         $timezone = new \DateTimeZone(
             $provider->getAuditor()->getConfiguration()->getTimezone()
         );
+
+        $entries = [];
+        foreach ($result->fetchAllAssociative() as $row) {
+            \assert(\is_string($row['created_at']));
+            $row['created_at'] = new \DateTimeImmutable($row['created_at'], $timezone);
+            $entries[] = Entry::fromArray($row);
+        }
+
+        return $entries;
+    }
+
+    /**
+     * Find audit entries for a specific entity by user search (case-insensitive LIKE on blame_user).
+     *
+     * @return array<Entry>
+     */
+    public function findEntityAuditsByUserSearch(string $entityClass, string $searchTerm): array
+    {
+        $provider = $this->reader->getProvider();
+        $tableName = $this->reader->getEntityAuditTableName($entityClass);
+
+        $storageService = $provider->getStorageServiceForEntity($entityClass);
+        $connection = $storageService->getEntityManager()->getConnection();
+
+        $sql = \sprintf(
+            'SELECT * FROM %s WHERE LOWER(blame_user) LIKE LOWER(?) ORDER BY created_at DESC, id DESC',
+            $tableName
+        );
+
+        $result = $connection->executeQuery($sql, ['%'.$searchTerm.'%']);
+
+        $timezone = new \DateTimeZone(
+            $provider->getAuditor()->getConfiguration()->getTimezone()
+        );
+
+        $entries = [];
+        foreach ($result->fetchAllAssociative() as $row) {
+            \assert(\is_string($row['created_at']));
+            $row['created_at'] = new \DateTimeImmutable($row['created_at'], $timezone);
+            $entries[] = Entry::fromArray($row);
+        }
+
+        return $entries;
+    }
+
+    /**
+     * Find audit entries from the same user within a time window around a reference entry.
+     *
+     * This creates a "timeline" view showing what the user did before and after
+     * the specified action, useful for understanding context and related changes.
+     *
+     * @param Entry $referenceEntry      The entry to build timeline around
+     * @param int   $windowMinutes       Minutes before and after the entry to include (default: 5)
+     * @param bool  $includeSystemEvents Include events with no user (async/command execution)
+     *
+     * @return array<string, array<Entry>> Indexed by entity FQCN
+     */
+    public function findUserTimeline(
+        Entry $referenceEntry,
+        int $windowMinutes = 5,
+        bool $includeSystemEvents = false
+    ): array {
+        $provider = $this->reader->getProvider();
+        $configuration = $provider->getConfiguration();
+
+        if (!$configuration instanceof Configuration) {
+            return [];
+        }
+
+        $userId = $referenceEntry->getUserId();
+        $createdAt = $referenceEntry->getCreatedAt();
+
+        if (null === $createdAt) {
+            return [];
+        }
+
+        $timezone = new \DateTimeZone(
+            $provider->getAuditor()->getConfiguration()->getTimezone()
+        );
+
+        $from = $createdAt->modify("-{$windowMinutes} minutes");
+        $to = $createdAt->modify("+{$windowMinutes} minutes");
+
+        $results = [];
+        $entities = $configuration->getEntities();
+
+        foreach (array_keys($entities) as $entity) {
+            \assert(\is_string($entity));
+
+            try {
+                $audits = $this->findEntityAuditsByUserTimeline(
+                    $entity,
+                    $userId,
+                    $from,
+                    $to,
+                    $includeSystemEvents,
+                    $timezone
+                );
+                if ([] !== $audits) {
+                    $results[$entity] = $audits;
+                }
+            } catch (\Exception) {
+                // Skip entities that are not accessible or have errors
+            }
+        }
+
+        return $results;
+    }
+
+    /**
+     * Find audit entries for a specific entity by user within a time range.
+     *
+     * @param null|int|string $userId The user ID to filter by (null matches system events)
+     *
+     * @return array<Entry>
+     */
+    public function findEntityAuditsByUserTimeline(
+        string $entityClass,
+        int|string|null $userId,
+        \DateTimeInterface $from,
+        \DateTimeInterface $to,
+        bool $includeSystemEvents,
+        \DateTimeZone $timezone
+    ): array {
+        $provider = $this->reader->getProvider();
+        $tableName = $this->reader->getEntityAuditTableName($entityClass);
+
+        $storageService = $provider->getStorageServiceForEntity($entityClass);
+        $connection = $storageService->getEntityManager()->getConnection();
+
+        $fromStr = $from->format('Y-m-d H:i:s');
+        $toStr = $to->format('Y-m-d H:i:s');
+
+        if (null === $userId) {
+            // If reference entry has no user, only show system events in the time range
+            $sql = \sprintf(
+                'SELECT * FROM %s WHERE blame_id IS NULL AND created_at BETWEEN ? AND ? ORDER BY created_at ASC, id ASC',
+                $tableName
+            );
+            $result = $connection->executeQuery($sql, [$fromStr, $toStr]);
+        } elseif ($includeSystemEvents) {
+            // Include both user's events and system events
+            $sql = \sprintf(
+                'SELECT * FROM %s WHERE (blame_id = ? OR blame_id IS NULL) AND created_at BETWEEN ? AND ? ORDER BY created_at ASC, id ASC',
+                $tableName
+            );
+            $result = $connection->executeQuery($sql, [(string) $userId, $fromStr, $toStr]);
+        } else {
+            // Only user's events
+            $sql = \sprintf(
+                'SELECT * FROM %s WHERE blame_id = ? AND created_at BETWEEN ? AND ? ORDER BY created_at ASC, id ASC',
+                $tableName
+            );
+            $result = $connection->executeQuery($sql, [(string) $userId, $fromStr, $toStr]);
+        }
 
         $entries = [];
         foreach ($result->fetchAllAssociative() as $row) {

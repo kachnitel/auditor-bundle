@@ -45,13 +45,13 @@ interface DataSourceInterface
         int $itemsPerPage
     ): PaginatedResult;
 
-    public function find(string|int $id): ?object;
+    public function find(int|string $id): ?object;
 
     public function supportsAction(string $action): bool;
 
     public function getIdField(): string;
 
-    public function getItemId(object $item): string|int;
+    public function getItemId(object $item): int|string;
 
     public function getItemValue(object $item, string $field): mixed;
 }

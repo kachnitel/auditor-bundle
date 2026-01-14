@@ -32,13 +32,15 @@ class EventAuditService
     /**
      * Create an EVENT audit entry for an entity.
      *
-     * @param object $entity The entity this event relates to
-     * @param string $eventName The name of the event (e.g., 'order.created')
-     * @param array<string, mixed> $data Additional event data
+     * @param object               $entity    The entity this event relates to
+     * @param string               $eventName The name of the event (e.g., 'order.created')
+     * @param array<string, mixed> $data      Additional event data
      */
     public function createEvent(object $entity, string $eventName, array $data = []): void
     {
-        $meta = $this->entityManager->getClassMetadata(DoctrineHelper::getRealClassName($entity));
+        /** @var class-string<object> $className */
+        $className = DoctrineHelper::getRealClassName($entity);
+        $meta = $this->entityManager->getClassMetadata($className);
 
         // Build the diffs array with event data
         $diffs = [
@@ -53,7 +55,9 @@ class EventAuditService
 
         // Get entity ID
         $identifierValues = $meta->getIdentifierValues($entity);
-        $id = reset($identifierValues);
+
+        /** @var null|int|string $id */
+        $id = reset($identifierValues) ?: null;
 
         // Get user/blame information from the configured provider
         $blame = $this->getBlame();
@@ -62,7 +66,7 @@ class EventAuditService
 
         /** @var Configuration $configuration */
         $configuration = $this->doctrineProvider->getConfiguration();
-        $auditTable = $configuration->getTablePrefix() . $meta->getTableName() . $configuration->getTableSuffix();
+        $auditTable = $configuration->getTablePrefix().$meta->getTableName().$configuration->getTableSuffix();
 
         $payload = [
             'entity' => $meta->getName(),

@@ -37,6 +37,7 @@ class AdminBundleIntegrationPass implements CompilerPassInterface
         // for all audited entities
         $factoryDefinition = new Definition(AuditDataSourceFactory::class);
         $factoryDefinition->setArgument(0, new Reference('DH\Auditor\Provider\Doctrine\Persistence\Reader\Reader'));
+        $factoryDefinition->setArgument(1, new Reference('DH\AuditorBundle\Service\AuditReader'));
         // Tag with interface FQCN for AutowireIterator discovery in admin-bundle
         $factoryDefinition->addTag('Kachnitel\AdminBundle\DataSource\DataSourceProviderInterface');
         $factoryDefinition->setPublic(false);

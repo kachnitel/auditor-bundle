@@ -62,6 +62,6 @@ class RequestIdSubscriber implements EventSubscriberInterface
         // Set variant to 10xx
         $data[8] = \chr(\ord($data[8]) & 0x3F | 0x80);
 
-        return vsprintf('%s%s-%s-%s-%s-%s%s%s', str_split(bin2hex($data), 4));
+        return vsprintf('%s%s-%s-%s-%s-%s%s%s', mb_str_split(bin2hex($data), 4));
     }
 }

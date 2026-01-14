@@ -39,6 +39,7 @@ class AuditContextSubscriber implements EventSubscriberInterface
         $payload = $event->getPayload();
 
         // Decode existing diffs, add context, re-encode
+        /** @var array<string, mixed> $diffs */
         $diffs = json_decode($payload['diffs'] ?? '{}', true, 512, JSON_THROW_ON_ERROR);
 
         // Store context under @context key to avoid collision with field names

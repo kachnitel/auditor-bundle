@@ -7,6 +7,7 @@ namespace DH\AuditorBundle\Tests\Event;
 use DH\AuditorBundle\Event\RequestIdSubscriber;
 use DH\AuditorBundle\Service\AuditContext;
 use PHPUnit\Framework\Attributes\Small;
+use PHPUnit\Framework\MockObject\MockObject;
 use PHPUnit\Framework\TestCase;
 use Symfony\Component\HttpFoundation\Request;
 use Symfony\Component\HttpKernel\Event\RequestEvent;
@@ -96,7 +97,7 @@ final class RequestIdSubscriberTest extends TestCase
 
     private function createRequestEvent(Request $request, int $requestType): RequestEvent
     {
-        /** @var HttpKernelInterface&\PHPUnit\Framework\MockObject\MockObject $kernel */
+        /** @var HttpKernelInterface&MockObject $kernel */
         $kernel = $this->createMock(HttpKernelInterface::class);
 
         return new RequestEvent($kernel, $request, $requestType);

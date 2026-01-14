@@ -11,6 +11,7 @@ use DH\Auditor\Tests\Provider\Doctrine\Traits\ReaderTrait;
 use DH\Auditor\Tests\Provider\Doctrine\Traits\Schema\BlogSchemaSetupTrait;
 use DH\AuditorBundle\Admin\AuditDataSource;
 use DH\AuditorBundle\Admin\AuditDataSourceFactory;
+use DH\AuditorBundle\Service\AuditReader;
 use Kachnitel\AdminBundle\DataSource\DataSourceProviderInterface;
 use PHPUnit\Framework\Attributes\Small;
 use Symfony\Bundle\FrameworkBundle\Test\KernelTestCase;
@@ -26,6 +27,7 @@ final class AuditDataSourceFactoryTest extends KernelTestCase
 
     private DoctrineProvider $provider;
     private Reader $reader;
+    private AuditReader $auditReader;
     private AuditDataSourceFactory $factory;
 
     protected function setUp(): void
@@ -39,7 +41,8 @@ final class AuditDataSourceFactoryTest extends KernelTestCase
         $this->setupAuditSchemas();
 
         $this->reader = $this->createReader();
-        $this->factory = new AuditDataSourceFactory($this->reader);
+        $this->auditReader = new AuditReader($this->reader);
+        $this->factory = new AuditDataSourceFactory($this->reader, $this->auditReader);
     }
 
     public function testImplementsDataSourceProviderInterface(): void

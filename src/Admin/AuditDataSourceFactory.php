@@ -7,6 +7,7 @@ namespace DH\AuditorBundle\Admin;
 use DH\Auditor\Provider\Doctrine\Persistence\Reader\Reader;
 use DH\Auditor\Provider\Doctrine\Persistence\Schema\SchemaManager;
 use DH\Auditor\Provider\Doctrine\Service\AuditingService;
+use DH\AuditorBundle\Service\AuditReader;
 use Kachnitel\AdminBundle\DataSource\DataSourceProviderInterface;
 
 /**
@@ -17,11 +18,12 @@ use Kachnitel\AdminBundle\DataSource\DataSourceProviderInterface;
  */
 class AuditDataSourceFactory implements DataSourceProviderInterface
 {
-    /** @var array<string, AuditDataSource>|null */
+    /** @var null|array<string, AuditDataSource> */
     private ?array $dataSourcesCache = null;
 
     public function __construct(
         private readonly Reader $reader,
+        private readonly AuditReader $auditReader,
     ) {}
 
     /**
@@ -42,7 +44,7 @@ class AuditDataSourceFactory implements DataSourceProviderInterface
      */
     public function createAll(): array
     {
-        if ($this->dataSourcesCache !== null) {
+        if (null !== $this->dataSourcesCache) {
             return array_values($this->dataSourcesCache);
         }
 
@@ -58,7 +60,7 @@ class AuditDataSourceFactory implements DataSourceProviderInterface
 
             foreach (array_keys($auditableTables) as $entityClass) {
                 \assert(\is_string($entityClass) && class_exists($entityClass));
-                $dataSource = new AuditDataSource($this->reader, $entityClass);
+                $dataSource = new AuditDataSource($this->reader, $entityClass, $this->auditReader);
                 $this->dataSourcesCache[$dataSource->getIdentifier()] = $dataSource;
             }
         }
@@ -77,7 +79,7 @@ class AuditDataSourceFactory implements DataSourceProviderInterface
             return null;
         }
 
-        return new AuditDataSource($this->reader, $entityClass);
+        return new AuditDataSource($this->reader, $entityClass, $this->auditReader);
     }
 
     /**

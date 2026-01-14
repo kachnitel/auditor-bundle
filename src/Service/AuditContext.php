@@ -15,7 +15,7 @@ namespace DH\AuditorBundle\Service;
  */
 class AuditContext
 {
-    /** @var array<string, mixed>|null */
+    /** @var null|array<string, mixed> */
     private ?array $context = null;
 
     /**
@@ -76,7 +76,7 @@ class AuditContext
     /**
      * Get the current context, if any.
      *
-     * @return array<string, mixed>|null
+     * @return null|array<string, mixed>
      */
     public function get(): ?array
     {

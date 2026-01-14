@@ -9,7 +9,7 @@ namespace Kachnitel\AdminBundle\DataSource;
  *
  * @internal
  */
-class ColumnMetadata
+final class ColumnMetadata
 {
     public function __construct(
         public readonly string $name,

@@ -11,6 +11,7 @@ use DH\Auditor\Tests\Provider\Doctrine\Fixtures\Entity\Standard\Blog\Author;
 use DH\Auditor\Tests\Provider\Doctrine\Traits\ReaderTrait;
 use DH\Auditor\Tests\Provider\Doctrine\Traits\Schema\BlogSchemaSetupTrait;
 use DH\AuditorBundle\Admin\AuditDataSource;
+use DH\AuditorBundle\Service\AuditReader;
 use Kachnitel\AdminBundle\DataSource\ColumnMetadata;
 use Kachnitel\AdminBundle\DataSource\DataSourceInterface;
 use Kachnitel\AdminBundle\DataSource\FilterMetadata;
@@ -343,7 +344,7 @@ final class AuditDataSourceTest extends KernelTestCase
 
     public function testFindReturnsNullWhenNotFound(): void
     {
-        $result = $this->dataSource->find(99999);
+        $result = $this->dataSource->find(99_999);
 
         $this->assertNull($result);
     }
@@ -391,5 +392,542 @@ final class AuditDataSourceTest extends KernelTestCase
         $result = $this->dataSource->query('', [], 'invalid_field', 'ASC', 1, 50);
 
         $this->assertSame(1, $result->totalItems);
+    }
+
+    // =========================================================================
+    // Actions column tests
+    // =========================================================================
+
+    public function testGetColumnsIncludesActionsColumn(): void
+    {
+        $columns = $this->dataSource->getColumns();
+
+        $this->assertArrayHasKey('actions', $columns);
+        $this->assertInstanceOf(ColumnMetadata::class, $columns['actions']);
+        $this->assertSame('actions', $columns['actions']->type);
+        $this->assertFalse($columns['actions']->sortable);
+        $this->assertSame('@DHAuditor/Admin/Audit/_row-actions.html.twig', $columns['actions']->template);
+    }
+
+    public function testGetColumnsIncludesDiffsColumnWithTemplate(): void
+    {
+        $columns = $this->dataSource->getColumns();
+
+        $this->assertArrayHasKey('diffs', $columns);
+        $this->assertSame('json', $columns['diffs']->type);
+        $this->assertFalse($columns['diffs']->sortable);
+        $this->assertSame('@DHAuditor/Admin/Audit/_changes-preview.html.twig', $columns['diffs']->template);
+    }
+
+    // =========================================================================
+    // Request ID filter tests
+    // =========================================================================
+
+    public function testGetFiltersIncludesRequestIdFilter(): void
+    {
+        $filters = $this->dataSource->getFilters();
+
+        $this->assertArrayHasKey('request_id', $filters);
+        $this->assertInstanceOf(FilterMetadata::class, $filters['request_id']);
+        $this->assertSame('text', $filters['request_id']->type);
+    }
+
+    // =========================================================================
+    // Timeline support tests
+    // =========================================================================
+
+    public function testHasTimelineSupportReturnsFalseWithoutAuditReader(): void
+    {
+        // dataSource in setUp was created without AuditReader
+        $this->assertFalse($this->dataSource->hasTimelineSupport());
+    }
+
+    public function testHasTimelineSupportReturnsTrueWithAuditReader(): void
+    {
+        $auditReader = new AuditReader($this->reader);
+        $dataSource = new AuditDataSource($this->reader, Author::class, $auditReader);
+
+        $this->assertTrue($dataSource->hasTimelineSupport());
+    }
+
+    // =========================================================================
+    // Change preview and detailed diffs tests
+    // =========================================================================
+
+    public function testGetChangePreview(): void
+    {
+        // Create an author
+        $auditingService = $this->provider->getAuditingServiceForEntity(Author::class);
+        $em = $auditingService->getEntityManager();
+
+        $author = new Author();
+        $author->setFullname('Test Author')->setEmail('test@example.com');
+        $em->persist($author);
+        $em->flush();
+        $this->flushAll([Author::class => $auditingService]);
+
+        $result = $this->dataSource->query('', [], 'created_at', 'DESC', 1, 50);
+        $entry = $result->items[0];
+
+        $preview = $this->dataSource->getChangePreview($entry);
+
+        $this->assertIsArray($preview);
+    }
+
+    public function testGetDetailedDiffs(): void
+    {
+        // Create an author
+        $auditingService = $this->provider->getAuditingServiceForEntity(Author::class);
+        $em = $auditingService->getEntityManager();
+
+        $author = new Author();
+        $author->setFullname('Test Author')->setEmail('test@example.com');
+        $em->persist($author);
+        $em->flush();
+        $this->flushAll([Author::class => $auditingService]);
+
+        $result = $this->dataSource->query('', [], 'created_at', 'DESC', 1, 50);
+        $entry = $result->items[0];
+
+        $detailed = $this->dataSource->getDetailedDiffs($entry);
+
+        $this->assertIsArray($detailed);
+    }
+
+    // =========================================================================
+    // Request ID methods tests
+    // =========================================================================
+
+    public function testGetRequestIdReturnsNullWithoutContext(): void
+    {
+        // Create an author without request ID context
+        $auditingService = $this->provider->getAuditingServiceForEntity(Author::class);
+        $em = $auditingService->getEntityManager();
+
+        $author = new Author();
+        $author->setFullname('Test Author')->setEmail('test@example.com');
+        $em->persist($author);
+        $em->flush();
+        $this->flushAll([Author::class => $auditingService]);
+
+        $result = $this->dataSource->query('', [], 'created_at', 'DESC', 1, 50);
+        $entry = $result->items[0];
+
+        $requestId = $this->dataSource->getRequestId($entry);
+
+        $this->assertNull($requestId);
+    }
+
+    public function testFindRelatedByRequestReturnsEmptyWithoutAuditReader(): void
+    {
+        // Create an author
+        $auditingService = $this->provider->getAuditingServiceForEntity(Author::class);
+        $em = $auditingService->getEntityManager();
+
+        $author = new Author();
+        $author->setFullname('Test Author')->setEmail('test@example.com');
+        $em->persist($author);
+        $em->flush();
+        $this->flushAll([Author::class => $auditingService]);
+
+        $result = $this->dataSource->query('', [], 'created_at', 'DESC', 1, 50);
+        $entry = $result->items[0];
+
+        // Without AuditReader, should return empty
+        $related = $this->dataSource->findRelatedByRequest($entry);
+
+        $this->assertSame([], $related);
+    }
+
+    public function testFindUserTimelineReturnsEmptyWithoutAuditReader(): void
+    {
+        // Create an author
+        $auditingService = $this->provider->getAuditingServiceForEntity(Author::class);
+        $em = $auditingService->getEntityManager();
+
+        $author = new Author();
+        $author->setFullname('Test Author')->setEmail('test@example.com');
+        $em->persist($author);
+        $em->flush();
+        $this->flushAll([Author::class => $auditingService]);
+
+        $result = $this->dataSource->query('', [], 'created_at', 'DESC', 1, 50);
+        $entry = $result->items[0];
+
+        // Without AuditReader, should return empty
+        $timeline = $this->dataSource->findUserTimeline($entry);
+
+        $this->assertSame([], $timeline);
+    }
+
+    public function testFindUserTimelineReturnsEntriesWithAuditReader(): void
+    {
+        // Create a data source with AuditReader
+        $auditReader = new AuditReader($this->reader);
+        $dataSource = new AuditDataSource($this->reader, Author::class, $auditReader);
+
+        // Create multiple authors to have entries in timeline
+        $auditingService = $this->provider->getAuditingServiceForEntity(Author::class);
+        $em = $auditingService->getEntityManager();
+
+        $author1 = new Author();
+        $author1->setFullname('Author 1')->setEmail('author1@example.com');
+        $em->persist($author1);
+
+        $author2 = new Author();
+        $author2->setFullname('Author 2')->setEmail('author2@example.com');
+        $em->persist($author2);
+
+        $em->flush();
+        $this->flushAll([Author::class => $auditingService]);
+
+        $result = $dataSource->query('', [], 'created_at', 'DESC', 1, 50);
+        $entry = $result->items[0];
+
+        // With AuditReader, should return entries (including system actions since no user)
+        $timeline = $dataSource->findUserTimeline($entry, 5, true);
+
+        // Both authors were created within the same minute, so both should be in timeline
+        $this->assertIsArray($timeline);
+    }
+
+    public function testFindRelatedByRequestReturnsEntriesWithAuditReader(): void
+    {
+        // Create a data source with AuditReader
+        $auditReader = new AuditReader($this->reader);
+        $dataSource = new AuditDataSource($this->reader, Author::class, $auditReader);
+
+        // Create an author
+        $auditingService = $this->provider->getAuditingServiceForEntity(Author::class);
+        $em = $auditingService->getEntityManager();
+
+        $author = new Author();
+        $author->setFullname('Test Author')->setEmail('test@example.com');
+        $em->persist($author);
+        $em->flush();
+        $this->flushAll([Author::class => $auditingService]);
+
+        $result = $dataSource->query('', [], 'created_at', 'DESC', 1, 50);
+        $entry = $result->items[0];
+
+        // With AuditReader but no request_id in entry, should return empty
+        $related = $dataSource->findRelatedByRequest($entry);
+
+        // Entry doesn't have request_id context, so should return empty
+        $this->assertSame([], $related);
+    }
+
+    // =========================================================================
+    // Date range filter tests
+    // =========================================================================
+
+    public function testQueryWithDateRangeFilter(): void
+    {
+        // Create authors at different times (simulated via ordering)
+        $auditingService = $this->provider->getAuditingServiceForEntity(Author::class);
+        $em = $auditingService->getEntityManager();
+
+        $author = new Author();
+        $author->setFullname('Test Author')->setEmail('test@example.com');
+        $em->persist($author);
+        $em->flush();
+        $this->flushAll([Author::class => $auditingService]);
+
+        // Query with date range filter for today
+        $today = (new \DateTimeImmutable())->format('Y-m-d');
+        $result = $this->dataSource->query('', [
+            'created_at' => [
+                'from' => $today,
+                'to' => $today,
+            ],
+        ], 'created_at', 'DESC', 1, 50);
+
+        $this->assertSame(1, $result->totalItems);
+    }
+
+    public function testQueryWithDateRangeFilterPartialFrom(): void
+    {
+        // Create an author
+        $auditingService = $this->provider->getAuditingServiceForEntity(Author::class);
+        $em = $auditingService->getEntityManager();
+
+        $author = new Author();
+        $author->setFullname('Test Author')->setEmail('test@example.com');
+        $em->persist($author);
+        $em->flush();
+        $this->flushAll([Author::class => $auditingService]);
+
+        // Query with only 'from' date
+        $today = (new \DateTimeImmutable())->format('Y-m-d');
+        $result = $this->dataSource->query('', [
+            'created_at' => [
+                'from' => $today,
+            ],
+        ], 'created_at', 'DESC', 1, 50);
+
+        $this->assertSame(1, $result->totalItems);
+    }
+
+    public function testQueryWithDateRangeFilterPartialTo(): void
+    {
+        // Create an author
+        $auditingService = $this->provider->getAuditingServiceForEntity(Author::class);
+        $em = $auditingService->getEntityManager();
+
+        $author = new Author();
+        $author->setFullname('Test Author')->setEmail('test@example.com');
+        $em->persist($author);
+        $em->flush();
+        $this->flushAll([Author::class => $auditingService]);
+
+        // Query with only 'to' date
+        $tomorrow = (new \DateTimeImmutable('+1 day'))->format('Y-m-d');
+        $result = $this->dataSource->query('', [
+            'created_at' => [
+                'to' => $tomorrow,
+            ],
+        ], 'created_at', 'DESC', 1, 50);
+
+        $this->assertSame(1, $result->totalItems);
+    }
+
+    // =========================================================================
+    // Global search tests
+    // =========================================================================
+
+    public function testQueryWithGlobalSearch(): void
+    {
+        // Create two authors
+        $auditingService = $this->provider->getAuditingServiceForEntity(Author::class);
+        $em = $auditingService->getEntityManager();
+
+        $author1 = new Author();
+        $author1->setFullname('Author 1')->setEmail('author1@example.com');
+        $em->persist($author1);
+
+        $author2 = new Author();
+        $author2->setFullname('Author 2')->setEmail('author2@example.com');
+        $em->persist($author2);
+
+        $em->flush();
+        $this->flushAll([Author::class => $auditingService]);
+
+        // Search for specific entity ID
+        $result = $this->dataSource->query((string) $author1->getId(), [], 'created_at', 'DESC', 1, 50);
+
+        $this->assertSame(1, $result->totalItems);
+        $this->assertSame((string) $author1->getId(), $result->items[0]->getObjectId());
+    }
+
+    // =========================================================================
+    // Transaction hash filter tests
+    // =========================================================================
+
+    public function testQueryWithTransactionHashFilter(): void
+    {
+        // Create an author
+        $auditingService = $this->provider->getAuditingServiceForEntity(Author::class);
+        $em = $auditingService->getEntityManager();
+
+        $author = new Author();
+        $author->setFullname('Test Author')->setEmail('test@example.com');
+        $em->persist($author);
+        $em->flush();
+        $this->flushAll([Author::class => $auditingService]);
+
+        // Get the transaction hash from the entry
+        $result = $this->dataSource->query('', [], 'created_at', 'DESC', 1, 50);
+        $transactionHash = $result->items[0]->getTransactionHash();
+
+        // Filter by transaction hash
+        $filteredResult = $this->dataSource->query('', ['transaction_hash' => $transactionHash], 'created_at', 'DESC', 1, 50);
+
+        $this->assertSame(1, $filteredResult->totalItems);
+        $this->assertSame($transactionHash, $filteredResult->items[0]->getTransactionHash());
+    }
+
+    // =========================================================================
+    // getItemValue additional fields tests
+    // =========================================================================
+
+    public function testGetItemValueForAllFields(): void
+    {
+        // Create an author
+        $auditingService = $this->provider->getAuditingServiceForEntity(Author::class);
+        $em = $auditingService->getEntityManager();
+
+        $author = new Author();
+        $author->setFullname('Test Author')->setEmail('test@example.com');
+        $em->persist($author);
+        $em->flush();
+        $this->flushAll([Author::class => $auditingService]);
+
+        $result = $this->dataSource->query('', [], 'created_at', 'DESC', 1, 50);
+        $entry = $result->items[0];
+
+        // Test all field mappings
+        $this->assertNotNull($this->dataSource->getItemValue($entry, 'transaction_hash'));
+        $this->assertNull($this->dataSource->getItemValue($entry, 'blame_id')); // No user in tests
+        $this->assertNull($this->dataSource->getItemValue($entry, 'blame_user')); // No user in tests
+        $this->assertNull($this->dataSource->getItemValue($entry, 'ip')); // No IP in tests
+        $this->assertNull($this->dataSource->getItemValue($entry, 'discriminator')); // No discriminator for Author
+    }
+
+    // =========================================================================
+    // Type filter with array tests
+    // =========================================================================
+
+    public function testQueryWithTypeFilterAsArray(): void
+    {
+        // Create and update an author (generates insert and update)
+        $auditingService = $this->provider->getAuditingServiceForEntity(Author::class);
+        $em = $auditingService->getEntityManager();
+
+        $author = new Author();
+        $author->setFullname('Original Name')->setEmail('author@example.com');
+        $em->persist($author);
+        $em->flush();
+        $this->flushAll([Author::class => $auditingService]);
+
+        $author->setFullname('Updated Name');
+        $em->flush();
+        $this->flushAll([Author::class => $auditingService]);
+
+        // Filter for both 'insert' and 'update' types as array
+        $result = $this->dataSource->query('', ['type' => ['insert', 'update']], 'created_at', 'DESC', 1, 50);
+
+        $this->assertSame(2, $result->totalItems);
+    }
+
+    // =========================================================================
+    // Blame user filter tests
+    // =========================================================================
+
+    public function testQueryWithBlameUserFilter(): void
+    {
+        // Create an author (no user associated in test environment)
+        $auditingService = $this->provider->getAuditingServiceForEntity(Author::class);
+        $em = $auditingService->getEntityManager();
+
+        $author = new Author();
+        $author->setFullname('Test Author')->setEmail('test@example.com');
+        $em->persist($author);
+        $em->flush();
+        $this->flushAll([Author::class => $auditingService]);
+
+        // Filter by a non-existent blame_user ID
+        $result = $this->dataSource->query('', ['blame_user' => 'nonexistent-user-id'], 'created_at', 'DESC', 1, 50);
+
+        // Should return 0 since no entries match that user
+        $this->assertSame(0, $result->totalItems);
+    }
+
+    public function testQueryWithBlameUserFilterAndAuditReaderUsesCaseInsensitiveSearch(): void
+    {
+        // Create a data source with AuditReader for enhanced user search
+        $auditReader = new AuditReader($this->reader);
+        $dataSource = new AuditDataSource($this->reader, Author::class, $auditReader);
+
+        // Create an author and set a blame_user value
+        $auditingService = $this->provider->getAuditingServiceForEntity(Author::class);
+        $em = $auditingService->getEntityManager();
+
+        $author = new Author();
+        $author->setFullname('Test Author')->setEmail('test@example.com');
+        $em->persist($author);
+        $em->flush();
+        $this->flushAll([Author::class => $auditingService]);
+
+        // Update the audit entry to set a blame_user value
+        $connection = $em->getConnection();
+        $tableName = $this->reader->getEntityAuditTableName(Author::class);
+        $connection->executeStatement(
+            \sprintf('UPDATE %s SET blame_user = ? WHERE object_id = ?', $tableName),
+            ['Admin@Example.Com', (string) $author->getId()]
+        );
+
+        // Search with different case - should find the entry
+        $result = $dataSource->query('', ['blame_user' => 'admin@example.com'], 'created_at', 'DESC', 1, 50);
+
+        $this->assertSame(1, $result->totalItems);
+        $this->assertInstanceOf(Entry::class, $result->items[0]);
+    }
+
+    public function testQueryWithBlameUserFilterAndAuditReaderFindsPartialMatches(): void
+    {
+        // Create a data source with AuditReader for enhanced user search
+        $auditReader = new AuditReader($this->reader);
+        $dataSource = new AuditDataSource($this->reader, Author::class, $auditReader);
+
+        // Create authors with different blame_user values
+        $auditingService = $this->provider->getAuditingServiceForEntity(Author::class);
+        $em = $auditingService->getEntityManager();
+
+        $author1 = new Author();
+        $author1->setFullname('Author 1')->setEmail('author1@example.com');
+        $em->persist($author1);
+
+        $author2 = new Author();
+        $author2->setFullname('Author 2')->setEmail('author2@example.com');
+        $em->persist($author2);
+
+        $em->flush();
+        $this->flushAll([Author::class => $auditingService]);
+
+        // Update audit entries with different blame_user values
+        $connection = $em->getConnection();
+        $tableName = $this->reader->getEntityAuditTableName(Author::class);
+        $connection->executeStatement(
+            \sprintf('UPDATE %s SET blame_user = ? WHERE object_id = ?', $tableName),
+            ['john@company.example.com', (string) $author1->getId()]
+        );
+        $connection->executeStatement(
+            \sprintf('UPDATE %s SET blame_user = ? WHERE object_id = ?', $tableName),
+            ['jane@other.example.org', (string) $author2->getId()]
+        );
+
+        // Search for partial match - should find only the matching entry
+        $result = $dataSource->query('', ['blame_user' => 'company'], 'created_at', 'DESC', 1, 50);
+
+        $this->assertSame(1, $result->totalItems);
+        $this->assertSame((string) $author1->getId(), $result->items[0]->getObjectId());
+    }
+
+    public function testQueryWithBlameUserFilterCombinedWithTypeFilter(): void
+    {
+        // Create a data source with AuditReader for enhanced user search
+        $auditReader = new AuditReader($this->reader);
+        $dataSource = new AuditDataSource($this->reader, Author::class, $auditReader);
+
+        // Create and update an author
+        $auditingService = $this->provider->getAuditingServiceForEntity(Author::class);
+        $em = $auditingService->getEntityManager();
+
+        $author = new Author();
+        $author->setFullname('Original Name')->setEmail('author@example.com');
+        $em->persist($author);
+        $em->flush();
+        $this->flushAll([Author::class => $auditingService]);
+
+        $author->setFullname('Updated Name');
+        $em->flush();
+        $this->flushAll([Author::class => $auditingService]);
+
+        // Update both audit entries with blame_user value
+        $connection = $em->getConnection();
+        $tableName = $this->reader->getEntityAuditTableName(Author::class);
+        $connection->executeStatement(
+            \sprintf('UPDATE %s SET blame_user = ?', $tableName),
+            ['admin@example.com']
+        );
+
+        // Search for user and filter by type - should find only update entries
+        $result = $dataSource->query('', [
+            'blame_user' => 'admin',
+            'type' => 'update',
+        ], 'created_at', 'DESC', 1, 50);
+
+        $this->assertSame(1, $result->totalItems);
+        $this->assertSame('update', $result->items[0]->getType());
     }
 }
