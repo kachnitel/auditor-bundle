@@ -1,0 +1,434 @@
+{# Cross-entity audit timeline view #}
+{# Shows all audit entries across all entity types for a user within a time range #}
+
+{% extends kachnitel_admin_base_layout ?? '@KachnitelAdmin/admin/base.html.twig' %}
+
+{# Macro to extract short class name from FQCN #}
+{% macro shortClassName(fqcn) %}
+    {{- fqcn|split('\\')|last -}}
+{% endmacro %}
+
+{# Macro to get action badge color #}
+{% macro actionBadge(type) %}
+    {% set colors = {
+        'insert': 'success',
+        'update': 'primary',
+        'remove': 'danger',
+        'associate': 'info',
+        'dissociate': 'warning',
+        'event': 'secondary'
+    } %}
+    <span class="badge bg-{{ colors[type]|default('secondary') }}">{{ type }}</span>
+{% endmacro %}
+
+{% block headerTitle %}Activity Timeline{% endblock %}
+
+{% block headerButtons %}
+    <a href="javascript:history.back()" class="btn btn-outline-secondary">
+        <span class="material-icons align-middle" style="font-size: 1.2rem;">arrow_back</span>
+        Back
+    </a>
+{% endblock %}
+
+{% block content %}
+<div class="audit-timeline-page">
+    {# Header card with timeline info #}
+    <div class="card mb-4">
+        <div class="card-body">
+            {% if error %}
+                <div class="alert alert-danger">
+                    <span class="material-icons align-middle me-2">error</span>
+                    {{ error }}
+                </div>
+            {% else %}
+                <div class="row align-items-center">
+                    <div class="col-md-5">
+                        <h5 class="mb-1">
+                            <span class="material-icons align-middle me-2">person</span>
+                            {{ user }}
+                        </h5>
+                        <p class="text-muted mb-0">
+                            <span class="material-icons align-middle" style="font-size: 1rem;">date_range</span>
+                            {{ from|date('Y-m-d H:i:s') }} &mdash; {{ to|date('Y-m-d H:i:s') }}
+                        </p>
+                    </div>
+                    <div class="col-md-4">
+                        {# System events toggle - prominent placement #}
+                        <div class="d-flex align-items-center justify-content-md-center">
+                            <a href="{{ path('dh_auditor_timeline', {
+                                user: user,
+                                from: from|date('Y-m-d H:i:s'),
+                                to: to|date('Y-m-d H:i:s'),
+                                anchor_entity: anchorEntity,
+                                anchor_id: anchorId,
+                                include_system: includeSystem ? '0' : '1',
+                                entities: filterEntities,
+                                actions: filterActions
+                            }) }}" class="btn {{ includeSystem ? 'btn-warning' : 'btn-outline-secondary' }} btn-sm">
+                                <span class="material-icons align-middle me-1" style="font-size: 1.1rem;">{{ includeSystem ? 'memory' : 'person' }}</span>
+                                {{ includeSystem ? 'Showing System Events' : 'User Events Only' }}
+                            </a>
+                        </div>
+                    </div>
+                    <div class="col-md-3 text-md-end">
+                        <span class="badge bg-secondary fs-6">{{ entries|length }} changes</span>
+                        <a href="#anchor-origin" class="btn btn-outline-secondary btn-sm ms-2">
+                            <span class="material-icons align-middle" style="font-size: 1.1rem;">compress</span>
+                            Go to Origin
+                        </a>
+                    </div>
+                </div>
+            {% endif %}
+        </div>
+    </div>
+
+    {# Filters #}
+    {% if not error and (availableEntities|length > 1 or availableActions|length > 1) %}
+        <div class="card mb-4">
+            <div class="card-header py-2">
+                <a class="text-decoration-none d-flex align-items-center justify-content-between" data-bs-toggle="collapse" href="#filtersCollapse" role="button" aria-expanded="false" aria-controls="filtersCollapse">
+                    <span>
+                        <span class="material-icons align-middle me-1" style="font-size: 1.2rem;">filter_list</span>
+                        Filters
+                        {% if filterEntities|length > 0 or filterActions|length > 0 %}
+                            <span class="badge bg-primary ms-2">{{ filterEntities|length + filterActions|length }} active</span>
+                        {% endif %}
+                    </span>
+                    <span class="material-icons align-middle">expand_more</span>
+                </a>
+            </div>
+            <div class="collapse {{ filterEntities|length > 0 or filterActions|length > 0 ? 'show' : '' }}" id="filtersCollapse">
+                <div class="card-body">
+                    <form method="get" action="{{ path('dh_auditor_timeline') }}">
+                        {# Preserve required parameters #}
+                        <input type="hidden" name="user" value="{{ user }}">
+                        <input type="hidden" name="from" value="{{ from|date('Y-m-d H:i:s') }}">
+                        <input type="hidden" name="to" value="{{ to|date('Y-m-d H:i:s') }}">
+                        {% if anchorEntity %}<input type="hidden" name="anchor_entity" value="{{ anchorEntity }}">{% endif %}
+                        {% if anchorId %}<input type="hidden" name="anchor_id" value="{{ anchorId }}">{% endif %}
+
+                        <div class="row">
+                            {# Entity type filter #}
+                            {% if availableEntities|length > 1 %}
+                                <div class="col-md-4 mb-3">
+                                    <label class="form-label fw-bold">
+                                        <span class="material-icons align-middle me-1" style="font-size: 1rem;">category</span>
+                                        Entity Types
+                                    </label>
+                                    <div class="d-flex flex-wrap gap-2">
+                                        {% for fqcn, shortName in availableEntities %}
+                                            <div class="form-check">
+                                                <input class="form-check-input" type="checkbox" name="entities[]" value="{{ fqcn }}" id="entity_{{ loop.index }}"
+                                                    {{ fqcn in filterEntities ? 'checked' : '' }}>
+                                                <label class="form-check-label" for="entity_{{ loop.index }}">
+                                                    {{ shortName }}
+                                                </label>
+                                            </div>
+                                        {% endfor %}
+                                    </div>
+                                </div>
+                            {% endif %}
+
+                            {# Action type filter #}
+                            {% if availableActions|length > 1 %}
+                                <div class="col-md-4 mb-3">
+                                    <label class="form-label fw-bold">
+                                        <span class="material-icons align-middle me-1" style="font-size: 1rem;">bolt</span>
+                                        Action Types
+                                    </label>
+                                    <div class="d-flex flex-wrap gap-2">
+                                        {% for action in availableActions %}
+                                            <div class="form-check">
+                                                <input class="form-check-input" type="checkbox" name="actions[]" value="{{ action }}" id="action_{{ loop.index }}"
+                                                    {{ action in filterActions ? 'checked' : '' }}>
+                                                <label class="form-check-label" for="action_{{ loop.index }}">
+                                                    {{ _self.actionBadge(action) }}
+                                                </label>
+                                            </div>
+                                        {% endfor %}
+                                    </div>
+                                </div>
+                            {% endif %}
+
+                        </div>
+                        <input type="hidden" name="include_system" value="{{ includeSystem ? '1' : '0' }}">
+
+                        <div class="d-flex gap-2">
+                            <button type="submit" class="btn btn-primary btn-sm">
+                                <span class="material-icons align-middle me-1" style="font-size: 1rem;">filter_alt</span>
+                                Apply Filters
+                            </button>
+                            <a href="{{ path('dh_auditor_timeline', {
+                                user: user,
+                                from: from|date('Y-m-d H:i:s'),
+                                to: to|date('Y-m-d H:i:s'),
+                                anchor_entity: anchorEntity,
+                                anchor_id: anchorId,
+                                include_system: includeSystem ? '1' : '0'
+                            }) }}" class="btn btn-outline-secondary btn-sm">
+                                <span class="material-icons align-middle me-1" style="font-size: 1rem;">clear</span>
+                                Clear Filters
+                            </a>
+                        </div>
+                    </form>
+                </div>
+            </div>
+        </div>
+    {% endif %}
+
+    {# Timeline visualization #}
+    {% if entries|length > 0 %}
+        <div class="card">
+            <div class="card-body p-0">
+                <div class="timeline-container">
+                    {% for item in entries %}
+                        {% set isAnchor = anchorEntity == item.entityClass and anchorId == (item.entry.getId() ~ '') %}
+                        {% set isFirst = loop.first %}
+                        {% set isLast = loop.last %}
+
+                        <div class="timeline-item {{ isAnchor ? 'timeline-item-anchor' : '' }} {{ isFirst ? 'timeline-item-first' : '' }} {{ isLast ? 'timeline-item-last' : '' }}">
+                            {# Timeline bullet and line #}
+                            <div class="timeline-marker">
+                                <div class="timeline-bullet {{ isAnchor ? 'timeline-bullet-anchor' : '' }}"></div>
+                                {% if not isLast %}
+                                    <div class="timeline-line"></div>
+                                {% endif %}
+                            </div>
+
+                            {# Content #}
+                            <div class="timeline-content">
+                                <div class="timeline-header">
+                                    {# Timestamp #}
+                                    <span class="timeline-time">
+                                        {{ item.entry.getCreatedAt()|date('H:i:s') }}
+                                    </span>
+
+                                    {# Entity type badge #}
+                                    <span class="badge bg-dark me-2" title="{{ item.entityClass }}">
+                                        {{ _self.shortClassName(item.entityClass) }}
+                                    </span>
+
+                                    {# Action badge #}
+                                    {{ _self.actionBadge(item.entry.getType()) }}
+
+                                    {# Object ID #}
+                                    <code class="ms-2">ID: {{ item.entry.getObjectId() }}</code>
+
+                                    {% if isAnchor %}
+                                        <span id="anchor-origin" class="badge bg-warning text-dark ms-2">
+                                            <span class="material-icons align-middle" style="font-size: 0.9rem;">compress</span>
+                                            Origin
+                                        </span>
+                                    {% endif %}
+                                </div>
+
+                                {# Changes preview #}
+                                {% set diffs = item.entry.getDiffs() %}
+                                {% if diffs is not empty %}
+                                    <div class="timeline-changes">
+                                        {% set fieldCount = 0 %}
+                                        {% set previewFields = [] %}
+                                        {% for key, value in diffs %}
+                                            {% if key not in ['@source', '@context'] %}
+                                                {% set fieldCount = fieldCount + 1 %}
+                                                {% if fieldCount <= 3 %}
+                                                    {% set previewFields = previewFields|merge([key]) %}
+                                                {% endif %}
+                                            {% endif %}
+                                        {% endfor %}
+
+                                        <div class="changes-summary">
+                                            {% for field in previewFields %}
+                                                {% set change = diffs[field] %}
+                                                <span class="change-field">
+                                                    <strong>{{ field }}</strong>:
+                                                    {% if change.old is defined and change.new is defined %}
+                                                        <span class="text-muted">{{ change.old|json_encode|slice(0, 20) }}</span>
+                                                        <span class="mx-1">&rarr;</span>
+                                                        <span>{{ change.new|json_encode|slice(0, 20) }}</span>
+                                                    {% elseif change.removed is defined and change.added is defined %}
+                                                        <span class="text-danger">-{{ change.removed|length }}</span>
+                                                        <span class="text-success">+{{ change.added|length }}</span>
+                                                    {% endif %}
+                                                </span>
+                                            {% endfor %}
+                                            {% if fieldCount > 3 %}
+                                                <span class="text-muted">+{{ fieldCount - 3 }} more</span>
+                                            {% endif %}
+                                        </div>
+                                    </div>
+                                {% endif %}
+
+                                {# User info (for system events when includeSystem is true) #}
+                                {% if not item.entry.getUsername() %}
+                                    <div class="timeline-system-event">
+                                        <span class="badge bg-secondary">
+                                            <span class="material-icons align-middle" style="font-size: 0.9rem;">memory</span>
+                                            System
+                                        </span>
+                                    </div>
+                                {% endif %}
+                            </div>
+                        </div>
+                    {% endfor %}
+                </div>
+            </div>
+        </div>
+
+        <div class="mt-3 text-muted small">
+            <span class="material-icons align-middle" style="font-size: 1rem;">info</span>
+            Showing all audit entries across all entity types for <strong>{{ user }}</strong> between {{ from|date('H:i:s') }} and {{ to|date('H:i:s') }}.
+            {% if includeSystem %}
+                System events (without user) are included.
+            {% endif %}
+        </div>
+    {% elseif not error %}
+        <div class="card">
+            <div class="card-body text-center py-5">
+                <span class="material-icons text-muted" style="font-size: 4rem;">history</span>
+                <h5 class="mt-3 text-muted">No Activity Found</h5>
+                <p class="text-muted">
+                    No audit entries found for <strong>{{ user }}</strong> between {{ from|date('Y-m-d H:i:s') }} and {{ to|date('Y-m-d H:i:s') }}.
+                </p>
+            </div>
+        </div>
+    {% endif %}
+</div>
+
+<style>
+.audit-timeline-page .timeline-container {
+    position: relative;
+    padding: 1.5rem 0;
+}
+
+.audit-timeline-page .timeline-item {
+    display: flex;
+    position: relative;
+    padding: 0 1.5rem;
+    min-height: 80px;
+}
+
+.audit-timeline-page .timeline-item-first {
+    padding-top: 0;
+}
+
+.audit-timeline-page .timeline-item-last {
+    min-height: auto;
+    padding-bottom: 1rem;
+}
+
+.audit-timeline-page .timeline-marker {
+    position: relative;
+    width: 40px;
+    flex-shrink: 0;
+    display: flex;
+    flex-direction: column;
+    align-items: center;
+}
+
+.audit-timeline-page .timeline-bullet {
+    width: 14px;
+    height: 14px;
+    border-radius: 50%;
+    background-color: #6c757d;
+    border: 3px solid #fff;
+    box-shadow: 0 0 0 2px #6c757d;
+    z-index: 2;
+    flex-shrink: 0;
+}
+
+.audit-timeline-page .timeline-bullet-anchor {
+    background-color: #ffc107;
+    box-shadow: 0 0 0 2px #ffc107, 0 0 10px rgba(255, 193, 7, 0.5);
+    width: 18px;
+    height: 18px;
+}
+
+.audit-timeline-page .timeline-line {
+    width: 2px;
+    flex-grow: 1;
+    background-color: #dee2e6;
+    margin-top: 4px;
+}
+
+.audit-timeline-page .timeline-content {
+    flex-grow: 1;
+    padding-left: 1rem;
+    padding-bottom: 1.5rem;
+}
+
+.audit-timeline-page .timeline-item-last .timeline-content {
+    padding-bottom: 0;
+}
+
+.audit-timeline-page .timeline-header {
+    display: flex;
+    align-items: center;
+    flex-wrap: wrap;
+    gap: 0.5rem;
+    margin-bottom: 0.5rem;
+}
+
+.audit-timeline-page .timeline-time {
+    font-family: monospace;
+    font-size: 0.9rem;
+    color: #495057;
+    font-weight: 600;
+    min-width: 70px;
+}
+
+.audit-timeline-page .timeline-changes {
+    background-color: #f8f9fa;
+    border-radius: 0.375rem;
+    padding: 0.5rem 0.75rem;
+    font-size: 0.85rem;
+    margin-top: 0.5rem;
+}
+
+.audit-timeline-page .changes-summary {
+    display: flex;
+    flex-wrap: wrap;
+    gap: 1rem;
+}
+
+.audit-timeline-page .change-field {
+    display: inline-flex;
+    align-items: center;
+    gap: 0.25rem;
+}
+
+.audit-timeline-page .timeline-system-event {
+    margin-top: 0.5rem;
+}
+
+.audit-timeline-page .timeline-item-anchor {
+    background-color: rgba(255, 193, 7, 0.1);
+    border-radius: 0.5rem;
+    margin-left: -0.5rem;
+    margin-right: -0.5rem;
+    padding-left: 2rem;
+    padding-right: 2rem;
+}
+
+.audit-timeline-page .timeline-item-anchor .timeline-content {
+    padding-top: 0.5rem;
+}
+
+.audit-timeline-page .timeline-item-anchor.timeline-item-first .timeline-content {
+    padding-top: 0;
+}
+
+/* Badge sizing consistency */
+.audit-timeline-page .badge {
+    font-size: 0.8rem;
+}
+
+/* Code styling */
+.audit-timeline-page code {
+    font-size: 0.85rem;
+    padding: 0.2em 0.4em;
+    background-color: #e9ecef;
+    border-radius: 0.25rem;
+}
+</style>
+{% endblock %}

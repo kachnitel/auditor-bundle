@@ -98,13 +98,22 @@
                     </div>
                 </div>
             {% endif %}
-            {% if hasTimelineSupport and entry.getUsername() %}
+            {% if hasTimelineSupport and entry.getUsername() and entry.getCreatedAt() %}
                 <div class="row">
                     <div class="col-md-12">
                         <h6 class="text-muted">User Timeline</h6>
                         <p>
-                            <a href="?columnFilters[blame_user]={{ entry.getUsername()|url_encode }}" class="btn btn-outline-primary btn-sm" title="Show other changes by {{ entry.getUsername() }}">
-                                View {{ entry.getUsername() }}'s activity
+                            {% set fromTime = entry.getCreatedAt()|date_modify('-5 minutes')|date('Y-m-d H:i:s') %}
+                            {% set toTime = entry.getCreatedAt()|date_modify('+5 minutes')|date('Y-m-d H:i:s') %}
+                            <a href="{{ path('dh_auditor_timeline', {
+                                   user: entry.getUsername(),
+                                   from: fromTime,
+                                   to: toTime,
+                                   anchor_entity: dataSource.getEntityClass(),
+                                   anchor_id: entry.getId()
+                               }) }}" class="btn btn-outline-primary btn-sm" title="Show all changes by {{ entry.getUsername() }} within ±5 minutes">
+                                <span class="material-icons align-middle" style="font-size: 1rem;">schedule</span>
+                                View {{ entry.getUsername() }}'s activity (±5 min)
                             </a>
                         </p>
                     </div>
@@ -223,7 +232,23 @@
                             <span class="material-icons align-middle me-2">schedule</span>
                             Activity Timeline
                         </h5>
-                        <span class="badge bg-secondary">{{ sortedEntries|length }} entries</span>
+                        <div class="d-flex align-items-center gap-2">
+                            <span class="badge bg-secondary">{{ sortedEntries|length }} entries</span>
+                            {% if entry.getUsername() and entry.getCreatedAt() %}
+                                {% set fromTime = entry.getCreatedAt()|date_modify('-5 minutes')|date('Y-m-d H:i:s') %}
+                                {% set toTime = entry.getCreatedAt()|date_modify('+5 minutes')|date('Y-m-d H:i:s') %}
+                                <a href="{{ path('dh_auditor_timeline', {
+                                       user: entry.getUsername(),
+                                       from: fromTime,
+                                       to: toTime,
+                                       anchor_entity: dataSource.getEntityClass(),
+                                       anchor_id: entry.getId()
+                                   }) }}" class="btn btn-outline-primary btn-sm" title="Open full timeline view">
+                                    <span class="material-icons align-middle" style="font-size: 1rem;">open_in_new</span>
+                                    Full View
+                                </a>
+                            {% endif %}
+                        </div>
                     </div>
                     <div class="card-body p-0">
                         {% if sortedEntries|length > 0 %}

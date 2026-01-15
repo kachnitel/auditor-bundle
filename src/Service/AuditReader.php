@@ -213,6 +213,110 @@ class AuditReader
     }
 
     /**
+     * Find audit entries across all entities by username within a time range.
+     *
+     * This creates a cross-entity "timeline" view showing all changes made by a user
+     * within a time window, useful for understanding the full impact of an action.
+     *
+     * @param string             $username            The username/email to search for (exact match, case-insensitive)
+     * @param \DateTimeInterface $from                Start of the time range
+     * @param \DateTimeInterface $to                  End of the time range
+     * @param bool               $includeSystemEvents Include events with no user (async/command execution)
+     *
+     * @return array<string, array<Entry>> Indexed by entity FQCN
+     */
+    public function findGlobalTimeline(
+        string $username,
+        \DateTimeInterface $from,
+        \DateTimeInterface $to,
+        bool $includeSystemEvents = false
+    ): array {
+        $provider = $this->reader->getProvider();
+        $configuration = $provider->getConfiguration();
+
+        if (!$configuration instanceof Configuration) {
+            return [];
+        }
+
+        $timezone = new \DateTimeZone(
+            $provider->getAuditor()->getConfiguration()->getTimezone()
+        );
+
+        $results = [];
+        $entities = $configuration->getEntities();
+
+        foreach (array_keys($entities) as $entity) {
+            \assert(\is_string($entity));
+
+            try {
+                $audits = $this->findEntityAuditsByGlobalTimeline(
+                    $entity,
+                    $username,
+                    $from,
+                    $to,
+                    $includeSystemEvents,
+                    $timezone
+                );
+                if ([] !== $audits) {
+                    $results[$entity] = $audits;
+                }
+            } catch (\Exception) {
+                // Skip entities that are not accessible or have errors
+            }
+        }
+
+        return $results;
+    }
+
+    /**
+     * Find audit entries for a specific entity by username within a time range.
+     *
+     * @return array<Entry>
+     */
+    public function findEntityAuditsByGlobalTimeline(
+        string $entityClass,
+        string $username,
+        \DateTimeInterface $from,
+        \DateTimeInterface $to,
+        bool $includeSystemEvents,
+        \DateTimeZone $timezone
+    ): array {
+        $provider = $this->reader->getProvider();
+        $tableName = $this->reader->getEntityAuditTableName($entityClass);
+
+        $storageService = $provider->getStorageServiceForEntity($entityClass);
+        $connection = $storageService->getEntityManager()->getConnection();
+
+        $fromStr = $from->format('Y-m-d H:i:s');
+        $toStr = $to->format('Y-m-d H:i:s');
+
+        if ($includeSystemEvents) {
+            // Include both user's events and system events
+            $sql = \sprintf(
+                'SELECT * FROM %s WHERE (LOWER(blame_user) = LOWER(?) OR blame_user IS NULL) AND created_at BETWEEN ? AND ? ORDER BY created_at ASC, id ASC',
+                $tableName
+            );
+            $result = $connection->executeQuery($sql, [$username, $fromStr, $toStr]);
+        } else {
+            // Only user's events (exact match on username)
+            $sql = \sprintf(
+                'SELECT * FROM %s WHERE LOWER(blame_user) = LOWER(?) AND created_at BETWEEN ? AND ? ORDER BY created_at ASC, id ASC',
+                $tableName
+            );
+            $result = $connection->executeQuery($sql, [$username, $fromStr, $toStr]);
+        }
+
+        $entries = [];
+        foreach ($result->fetchAllAssociative() as $row) {
+            \assert(\is_string($row['created_at']));
+            $row['created_at'] = new \DateTimeImmutable($row['created_at'], $timezone);
+            $entries[] = Entry::fromArray($row);
+        }
+
+        return $entries;
+    }
+
+    /**
      * Find audit entries from the same user within a time window around a reference entry.
      *
      * This creates a "timeline" view showing what the user did before and after

@@ -552,6 +552,88 @@ final class AuditReaderTest extends KernelTestCase
     }
 
     // =========================================================================
+    // findGlobalTimeline tests
+    // =========================================================================
+
+    public function testFindGlobalTimelineReturnsEmptyWhenNoMatches(): void
+    {
+        $this->createAuthor('Test Author', 'test@example.com');
+
+        $from = new \DateTimeImmutable('-1 hour');
+        $to = new \DateTimeImmutable('+1 hour');
+
+        $result = $this->auditReader->findGlobalTimeline('nonexistent@email.com', $from, $to);
+
+        $this->assertSame([], $result);
+    }
+
+    public function testFindGlobalTimelineFindsEntriesByUsername(): void
+    {
+        $this->createAuthorWithBlameUser('Test Author', 'test@example.com', 'admin@example.com');
+
+        $from = new \DateTimeImmutable('-1 hour');
+        $to = new \DateTimeImmutable('+1 hour');
+
+        $result = $this->auditReader->findGlobalTimeline('admin@example.com', $from, $to);
+
+        // Should have Author entries
+        $this->assertArrayHasKey(Author::class, $result);
+        $this->assertCount(1, $result[Author::class]);
+        $this->assertInstanceOf(Entry::class, $result[Author::class][0]);
+    }
+
+    public function testFindGlobalTimelineIsCaseInsensitive(): void
+    {
+        $this->createAuthorWithBlameUser('Test Author', 'test@example.com', 'Admin@Example.Com');
+
+        $from = new \DateTimeImmutable('-1 hour');
+        $to = new \DateTimeImmutable('+1 hour');
+
+        // Search with different case
+        $result = $this->auditReader->findGlobalTimeline('admin@example.com', $from, $to);
+
+        $this->assertArrayHasKey(Author::class, $result);
+        $this->assertCount(1, $result[Author::class]);
+    }
+
+    public function testFindGlobalTimelineRespectsTimeRange(): void
+    {
+        $this->createAuthorWithBlameUser('Test Author', 'test@example.com', 'admin@example.com');
+
+        // Use a time range in the past (before the entry was created)
+        $from = new \DateTimeImmutable('-2 hours');
+        $to = new \DateTimeImmutable('-1 hour');
+
+        $result = $this->auditReader->findGlobalTimeline('admin@example.com', $from, $to);
+
+        // Should not find the entry because it's outside the time range
+        $this->assertSame([], $result);
+    }
+
+    public function testFindEntityAuditsByGlobalTimelineIncludesSystemEventsWhenRequested(): void
+    {
+        // Create an entry without blame_user (system event)
+        $this->createAuthor('System Author', 'system@example.com');
+
+        $from = new \DateTimeImmutable('-1 hour');
+        $to = new \DateTimeImmutable('+1 hour');
+        $timezone = new \DateTimeZone('UTC');
+
+        // With includeSystemEvents = true, should find system events
+        $result = $this->auditReader->findEntityAuditsByGlobalTimeline(
+            Author::class,
+            'admin@example.com', // User doesn't matter when includeSystemEvents is true
+            $from,
+            $to,
+            true, // Include system events
+            $timezone
+        );
+
+        // Should find the system event (no blame_user)
+        $this->assertCount(1, $result);
+    }
+
+    // =========================================================================
     // Context integration tests
     // =========================================================================
 

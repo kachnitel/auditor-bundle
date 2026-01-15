@@ -125,3 +125,6 @@ services:
     arguments:
       - '@DH\Auditor\Provider\Doctrine\Persistence\Reader\Reader'
   dh_auditor.reader: '@DH\AuditorBundle\Service\AuditReader'
+
+  # Note: TimelineController and AuditorRouteLoader are registered conditionally
+  # via AdminBundleIntegrationPass when kachnitel/admin-bundle is installed

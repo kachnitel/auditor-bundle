@@ -90,8 +90,9 @@ class AuditDataSource implements DataSourceInterface
             ], 'Action', true, 2),
             'created_at' => FilterMetadata::dateRange('created_at', 'Date', 3),
             'blame_user' => FilterMetadata::text('blame_user', 'User', 'Search user...', 4),
-            'transaction_hash' => FilterMetadata::text('transaction_hash', 'Transaction', 'Transaction hash...', 5),
-            'request_id' => FilterMetadata::text('request_id', 'Request ID', 'Request correlation ID...', 6),
+            'hide_system' => FilterMetadata::boolean('hide_system', 'Hide System Events', false, 5),
+            'transaction_hash' => FilterMetadata::text('transaction_hash', 'Transaction', 'Transaction hash...', 6),
+            'request_id' => FilterMetadata::text('request_id', 'Request ID', 'Request correlation ID...', 7),
         ];
     }
 
@@ -128,9 +129,12 @@ class AuditDataSource implements DataSourceInterface
             return $this->queryByUserSearch($filters['blame_user'], $filters, $page, $itemsPerPage);
         }
 
+        // Check if we need in-memory filtering for system events
+        $hideSystem = !empty($filters['hide_system']) && ('1' === $filters['hide_system'] || true === $filters['hide_system']);
+
         $query = $this->reader->createQuery($this->entityClass);
 
-        // Apply filters
+        // Apply filters (excluding hide_system which is handled in-memory)
         $this->applyFilters($query, $filters, $search);
 
         // Apply sorting
@@ -141,7 +145,34 @@ class AuditDataSource implements DataSourceInterface
             $query->addOrderBy('created_at', 'DESC');
         }
 
-        // Get total count before pagination
+        // When filtering system events, we need to fetch all and filter in memory
+        if ($hideSystem) {
+            // Fetch all entries (no pagination at query level)
+            $entries = $query->execute();
+
+            // Filter out system events (entries without username)
+            $entries = array_filter($entries, static fn (Entry $entry) => null !== $entry->getUsername());
+            $entries = array_values($entries);
+            $total = \count($entries);
+
+            // Apply pagination in memory
+            $page = max(1, $page);
+            $totalPages = $total > 0 ? (int) ceil($total / $itemsPerPage) : 0;
+            if ($totalPages > 0 && $page > $totalPages) {
+                $page = $totalPages;
+            }
+            $offset = ($page - 1) * $itemsPerPage;
+            $entries = \array_slice($entries, $offset, $itemsPerPage);
+
+            return new PaginatedResult(
+                items: $entries,
+                totalItems: $total,
+                currentPage: $page,
+                itemsPerPage: $itemsPerPage,
+            );
+        }
+
+        // Standard query path with database pagination
         $total = $query->count();
 
         // Clamp page to valid range

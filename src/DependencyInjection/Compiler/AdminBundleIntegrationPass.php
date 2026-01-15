@@ -5,18 +5,22 @@ declare(strict_types=1);
 namespace DH\AuditorBundle\DependencyInjection\Compiler;
 
 use DH\AuditorBundle\Admin\AuditDataSourceFactory;
+use DH\AuditorBundle\Controller\TimelineController;
+use DH\AuditorBundle\Routing\AuditorRouteLoader;
+use DH\AuditorBundle\Service\AuditReader;
 use Symfony\Component\DependencyInjection\Compiler\CompilerPassInterface;
 use Symfony\Component\DependencyInjection\ContainerBuilder;
 use Symfony\Component\DependencyInjection\Definition;
 use Symfony\Component\DependencyInjection\Reference;
 
 /**
- * Registers audit data sources with admin-bundle when it's installed.
+ * Registers audit admin integration when admin-bundle is installed.
  *
  * This compiler pass checks if kachnitel/admin-bundle is available and,
- * if so, registers the AuditDataSourceFactory as a data source provider.
- * The factory implements DataSourceProviderInterface and will be picked up
- * by the admin-bundle's DataSourceRegistry.
+ * if so, registers:
+ * - AuditDataSourceFactory as a data source provider
+ * - TimelineController for cross-entity audit timeline view
+ * - AuditorRouteLoader for automatic route registration
  */
 class AdminBundleIntegrationPass implements CompilerPassInterface
 {
@@ -32,17 +36,47 @@ class AdminBundleIntegrationPass implements CompilerPassInterface
             return;
         }
 
+        $this->registerDataSourceFactory($container);
+        $this->registerTimelineController($container);
+        $this->registerRouteLoader($container);
+    }
+
+    private function registerDataSourceFactory(ContainerBuilder $container): void
+    {
         // Register AuditDataSourceFactory as a data source provider
         // It implements DataSourceProviderInterface and provides audit data sources
         // for all audited entities
         $factoryDefinition = new Definition(AuditDataSourceFactory::class);
         $factoryDefinition->setArgument(0, new Reference('DH\Auditor\Provider\Doctrine\Persistence\Reader\Reader'));
-        $factoryDefinition->setArgument(1, new Reference('DH\AuditorBundle\Service\AuditReader'));
+        $factoryDefinition->setArgument(1, new Reference(AuditReader::class));
         // Tag with interface FQCN for AutowireIterator discovery in admin-bundle
         $factoryDefinition->addTag('Kachnitel\AdminBundle\DataSource\DataSourceProviderInterface');
         $factoryDefinition->setPublic(false);
 
         $container->setDefinition(AuditDataSourceFactory::class, $factoryDefinition);
         $container->setAlias('dh_auditor.admin.data_source_factory', AuditDataSourceFactory::class);
+    }
+
+    private function registerTimelineController(ContainerBuilder $container): void
+    {
+        // Register TimelineController for cross-entity audit timeline view
+        $controllerDefinition = new Definition(TimelineController::class);
+        $controllerDefinition->setArgument(0, new Reference(AuditReader::class));
+        $controllerDefinition->addTag('controller.service_arguments');
+        $controllerDefinition->addTag('container.service_subscriber');
+        $controllerDefinition->setAutowired(true);
+        $controllerDefinition->setAutoconfigured(true);
+        $controllerDefinition->setPublic(true);
+
+        $container->setDefinition(TimelineController::class, $controllerDefinition);
+    }
+
+    private function registerRouteLoader(ContainerBuilder $container): void
+    {
+        // Register AuditorRouteLoader for automatic route registration
+        $loaderDefinition = new Definition(AuditorRouteLoader::class);
+        $loaderDefinition->addTag('routing.loader');
+
+        $container->setDefinition(AuditorRouteLoader::class, $loaderDefinition);
     }
 }
