@@ -1,6 +1,6 @@
 <?php
 
-namespace DH\AuditorBundle\DependencyInjection;
+namespace Kachnitel\AuditorBundle\DependencyInjection;
 
 use DH\Auditor\Provider\Doctrine\Persistence\Reader\Reader;
 use Symfony\Component\Config\Definition\Builder\ArrayNodeDefinition;
@@ -14,7 +14,7 @@ class Configuration implements ConfigurationInterface
      */
     public function getConfigTreeBuilder(): TreeBuilder
     {
-        $treeBuilder = new TreeBuilder('dh_auditor');
+        $treeBuilder = new TreeBuilder('kachnitel_auditor');
 
         $treeBuilder->getRootNode()
             ->children()
@@ -25,13 +25,13 @@ class Configuration implements ConfigurationInterface
                     ->defaultValue('UTC')
                 ->end()
                 ->scalarNode('user_provider')
-                    ->defaultValue('dh_auditor.user_provider')
+                    ->defaultValue('kachnitel_auditor.user_provider')
                 ->end()
                 ->scalarNode('security_provider')
-                    ->defaultValue('dh_auditor.security_provider')
+                    ->defaultValue('kachnitel_auditor.security_provider')
                 ->end()
                 ->scalarNode('role_checker')
-                    ->defaultValue('dh_auditor.role_checker')
+                    ->defaultValue('kachnitel_auditor.role_checker')
                 ->end()
                 ->append($this->getProvidersNode())
             ->end()

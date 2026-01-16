@@ -2,11 +2,11 @@
 
 declare(strict_types=1);
 
-namespace DH\AuditorBundle\Event;
+namespace Kachnitel\AuditorBundle\Event;
 
 use DH\Auditor\Configuration;
 use DH\Auditor\User\UserProviderInterface;
-use DH\AuditorBundle\User\ConsoleUserProvider;
+use Kachnitel\AuditorBundle\User\ConsoleUserProvider;
 use Symfony\Component\Console\ConsoleEvents;
 use Symfony\Component\Console\Event\ConsoleCommandEvent;
 use Symfony\Component\EventDispatcher\EventSubscriberInterface;

@@ -2,9 +2,9 @@
 
 declare(strict_types=1);
 
-namespace DH\AuditorBundle\Tests\Service;
+namespace Kachnitel\AuditorBundle\Tests\Service;
 
-use DH\AuditorBundle\Service\AuditContext;
+use Kachnitel\AuditorBundle\Service\AuditContext;
 use PHPUnit\Framework\Attributes\Small;
 use PHPUnit\Framework\TestCase;
 

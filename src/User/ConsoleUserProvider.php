@@ -2,7 +2,7 @@
 
 declare(strict_types=1);
 
-namespace DH\AuditorBundle\User;
+namespace Kachnitel\AuditorBundle\User;
 
 use DH\Auditor\User\User;
 use DH\Auditor\User\UserInterface;

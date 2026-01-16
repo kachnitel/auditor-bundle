@@ -2,7 +2,7 @@
 
 declare(strict_types=1);
 
-namespace DH\AuditorBundle\Service;
+namespace Kachnitel\AuditorBundle\Service;
 
 use DH\Auditor\Auditor;
 use DH\Auditor\Event\LifecycleEvent;

@@ -2,14 +2,14 @@
 
 declare(strict_types=1);
 
-namespace DH\AuditorBundle\DependencyInjection\Compiler;
+namespace Kachnitel\AuditorBundle\DependencyInjection\Compiler;
 
 use DH\Auditor\Provider\Doctrine\Auditing\Annotation\AnnotationLoader;
 use DH\Auditor\Provider\Doctrine\Auditing\DBAL\Middleware\AuditorMiddleware;
 use DH\Auditor\Provider\Doctrine\DoctrineProvider;
 use DH\Auditor\Provider\Doctrine\Service\AuditingService;
 use DH\Auditor\Provider\Doctrine\Service\StorageService;
-use DH\AuditorBundle\Tests\DependencyInjection\Compiler\DoctrineMiddlewareCompilerPassTest;
+use Kachnitel\AuditorBundle\Tests\DependencyInjection\Compiler\DoctrineMiddlewareCompilerPassTest;
 use Doctrine\DBAL\Driver\Middleware;
 use Symfony\Component\DependencyInjection\ChildDefinition;
 use Symfony\Component\DependencyInjection\Compiler\CompilerPassInterface;
@@ -28,7 +28,7 @@ class DoctrineProviderConfigurationCompilerPass implements CompilerPassInterface
             return;
         }
 
-        $doctrineProviderConfigurationKey = 'dh_auditor.provider.doctrine.configuration';
+        $doctrineProviderConfigurationKey = 'kachnitel_auditor.provider.doctrine.configuration';
         if (!$container->hasParameter($doctrineProviderConfigurationKey)) {
             return;
         }
@@ -41,7 +41,7 @@ class DoctrineProviderConfigurationCompilerPass implements CompilerPassInterface
             $entityManagerName = str_replace('@', '', $entityManagerName);
             $entityManagerReference = new Reference($entityManagerName);
 
-            $service = 'dh_auditor.provider.doctrine.storage_services.'.$entityManagerName;
+            $service = 'kachnitel_auditor.provider.doctrine.storage_services.'.$entityManagerName;
             $serviceDefinition = new Definition(StorageService::class, [
                 $service,
                 $entityManagerReference,
@@ -60,7 +60,7 @@ class DoctrineProviderConfigurationCompilerPass implements CompilerPassInterface
             $entityManagerName = str_replace('@', '', $entityManagerName);
             $entityManagerReference = new Reference($entityManagerName);
 
-            $service = 'dh_auditor.provider.doctrine.auditing_services.'.$entityManagerName;
+            $service = 'kachnitel_auditor.provider.doctrine.auditing_services.'.$entityManagerName;
             $serviceDefinition = new Definition(AuditingService::class, [
                 $service,
                 $entityManagerReference,

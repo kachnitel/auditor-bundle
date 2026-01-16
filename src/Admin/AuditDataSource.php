@@ -2,16 +2,16 @@
 
 declare(strict_types=1);
 
-namespace DH\AuditorBundle\Admin;
+namespace Kachnitel\AuditorBundle\Admin;
 
 use DH\Auditor\Model\Entry;
 use DH\Auditor\Provider\Doctrine\Persistence\Reader\Filter\DateRangeFilter;
 use DH\Auditor\Provider\Doctrine\Persistence\Reader\Filter\SimpleFilter;
 use DH\Auditor\Provider\Doctrine\Persistence\Reader\Query;
 use DH\Auditor\Provider\Doctrine\Persistence\Reader\Reader;
-use DH\AuditorBundle\Helper\DiffFormatter;
-use DH\AuditorBundle\Helper\UrlHelper;
-use DH\AuditorBundle\Service\AuditReader;
+use Kachnitel\AuditorBundle\Helper\DiffFormatter;
+use Kachnitel\AuditorBundle\Helper\UrlHelper;
+use Kachnitel\AuditorBundle\Service\AuditReader;
 use Kachnitel\AdminBundle\DataSource\ColumnMetadata;
 use Kachnitel\AdminBundle\DataSource\DataSourceInterface;
 use Kachnitel\AdminBundle\DataSource\FilterMetadata;

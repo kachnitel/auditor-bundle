@@ -2,12 +2,12 @@
 
 declare(strict_types=1);
 
-namespace DH\AuditorBundle\DependencyInjection\Compiler;
+namespace Kachnitel\AuditorBundle\DependencyInjection\Compiler;
 
-use DH\AuditorBundle\Admin\AuditDataSourceFactory;
-use DH\AuditorBundle\Controller\TimelineController;
-use DH\AuditorBundle\Routing\AuditorRouteLoader;
-use DH\AuditorBundle\Service\AuditReader;
+use Kachnitel\AuditorBundle\Admin\AuditDataSourceFactory;
+use Kachnitel\AuditorBundle\Controller\TimelineController;
+use Kachnitel\AuditorBundle\Routing\AuditorRouteLoader;
+use Kachnitel\AuditorBundle\Service\AuditReader;
 use Symfony\Component\DependencyInjection\Compiler\CompilerPassInterface;
 use Symfony\Component\DependencyInjection\ContainerBuilder;
 use Symfony\Component\DependencyInjection\Definition;
@@ -54,7 +54,7 @@ class AdminBundleIntegrationPass implements CompilerPassInterface
         $factoryDefinition->setPublic(false);
 
         $container->setDefinition(AuditDataSourceFactory::class, $factoryDefinition);
-        $container->setAlias('dh_auditor.admin.data_source_factory', AuditDataSourceFactory::class);
+        $container->setAlias('kachnitel_auditor.admin.data_source_factory', AuditDataSourceFactory::class);
     }
 
     private function registerTimelineController(ContainerBuilder $container): void

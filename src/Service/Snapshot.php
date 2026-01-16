@@ -2,7 +2,7 @@
 
 declare(strict_types=1);
 
-namespace DH\AuditorBundle\Service;
+namespace Kachnitel\AuditorBundle\Service;
 
 use DH\Auditor\Model\Entry;
 use DH\Auditor\Provider\Doctrine\Persistence\Reader\Filter\DateRangeFilter;

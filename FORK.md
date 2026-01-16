@@ -18,7 +18,7 @@ Request-scoped service for adding metadata (notes, reasons) to audit entries.
 
 **Usage:**
 ```php
-use DH\AuditorBundle\Service\AuditContext;
+use Kachnitel\AuditorBundle\Service\AuditContext;
 
 class ProductController
 {
@@ -80,7 +80,7 @@ business actions rather than simple field changes.
 
 **Usage:**
 ```php
-use DH\AuditorBundle\Service\EventAuditService;
+use Kachnitel\AuditorBundle\Service\EventAuditService;
 
 class OrderService
 {
@@ -132,7 +132,7 @@ Query interface for retrieving and filtering audit entries.
 
 **Usage:**
 ```php
-use DH\AuditorBundle\Service\AuditReader;
+use Kachnitel\AuditorBundle\Service\AuditReader;
 
 class AuditController
 {
@@ -182,7 +182,7 @@ same HTTP request (e.g., updating an order also updated related inventory).
 
 **Usage:**
 ```php
-use DH\AuditorBundle\Service\AuditReader;
+use Kachnitel\AuditorBundle\Service\AuditReader;
 
 class AuditController
 {
@@ -228,7 +228,7 @@ after that action. Optionally include system events (async/command execution).
 
 **Usage:**
 ```php
-use DH\AuditorBundle\Service\AuditReader;
+use Kachnitel\AuditorBundle\Service\AuditReader;
 use DH\Auditor\Model\Entry;
 
 class AuditController
@@ -279,7 +279,7 @@ Reconstructs entity property values at any point in history.
 
 **Usage:**
 ```php
-use DH\AuditorBundle\Service\Snapshot;
+use Kachnitel\AuditorBundle\Service\Snapshot;
 
 class InventoryReportService
 {

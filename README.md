@@ -1,9 +1,14 @@
-# auditor-bundle (fork)
+# kachnitel/auditor-bundle
 
 Fork of [DamienHarper/auditor-bundle](https://github.com/DamienHarper/auditor-bundle) with additional features.
 
-`auditor-bundle`, formerly known as `DoctrineAuditBundle` integrates `auditor` library into Symfony 6.4+ applications.
+Integrates `auditor` library into Symfony 6.4+ applications for Doctrine ORM audit logging.
 
+## Installation
+
+```bash
+composer require kachnitel/auditor-bundle
+```
 
 ## Fork Features
 
@@ -12,11 +17,13 @@ This fork adds:
 - **AuditReader**: Query audit entries with filters
 - **Snapshot**: Reconstruct entity state at any point in history
 - **EventAuditService**: Create EVENT-type audits for domain events
-- **Admin Integration**: Auto-registered audit data sources with `kachna/admin-bundle`
-
-Changes maintain backward compatibility with the original bundle.
+- **Admin Integration**: Auto-registered audit data sources with `kachnitel/admin-bundle`
 
 **📖 [See FORK.md for detailed documentation and usage examples](FORK.md)**
+
+
+**📦 Migrating from damienharper/auditor-bundle? [See MIGRATION.md](MIGRATION.md)**
+
 
 <details>
 <summary><strong>View feature details</strong></summary>

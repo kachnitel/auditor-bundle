@@ -2,10 +2,10 @@
 
 declare(strict_types=1);
 
-namespace DH\AuditorBundle\Event;
+namespace Kachnitel\AuditorBundle\Event;
 
 use DH\Auditor\Event\LifecycleEvent;
-use DH\AuditorBundle\Service\AuditContext;
+use Kachnitel\AuditorBundle\Service\AuditContext;
 use Symfony\Component\EventDispatcher\EventSubscriberInterface;
 
 /**

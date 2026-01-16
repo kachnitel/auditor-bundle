@@ -2,9 +2,9 @@
 
 declare(strict_types=1);
 
-namespace DH\AuditorBundle\Event;
+namespace Kachnitel\AuditorBundle\Event;
 
-use DH\AuditorBundle\Service\AuditContext;
+use Kachnitel\AuditorBundle\Service\AuditContext;
 use Symfony\Component\EventDispatcher\EventSubscriberInterface;
 use Symfony\Component\HttpKernel\Event\RequestEvent;
 use Symfony\Component\HttpKernel\KernelEvents;

@@ -2,20 +2,20 @@
 
 declare(strict_types=1);
 
-namespace DH\AuditorBundle;
+namespace Kachnitel\AuditorBundle;
 
-use DH\AuditorBundle\DependencyInjection\Compiler\AddProviderCompilerPass;
-use DH\AuditorBundle\DependencyInjection\Compiler\AdminBundleIntegrationPass;
-use DH\AuditorBundle\DependencyInjection\Compiler\CustomConfigurationCompilerPass;
-use DH\AuditorBundle\DependencyInjection\Compiler\DoctrineProviderConfigurationCompilerPass;
+use Kachnitel\AuditorBundle\DependencyInjection\Compiler\AddProviderCompilerPass;
+use Kachnitel\AuditorBundle\DependencyInjection\Compiler\AdminBundleIntegrationPass;
+use Kachnitel\AuditorBundle\DependencyInjection\Compiler\CustomConfigurationCompilerPass;
+use Kachnitel\AuditorBundle\DependencyInjection\Compiler\DoctrineProviderConfigurationCompilerPass;
 use Symfony\Component\DependencyInjection\Compiler\PassConfig;
 use Symfony\Component\DependencyInjection\ContainerBuilder;
 use Symfony\Component\HttpKernel\Bundle\Bundle;
 
 /**
- * @see Tests\DHAuditorBundleTest
+ * @see Tests\KachnitelAuditorBundleTest
  */
-class DHAuditorBundle extends Bundle
+class KachnitelAuditorBundle extends Bundle
 {
     public function build(ContainerBuilder $container): void
     {

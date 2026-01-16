@@ -2,11 +2,11 @@
 
 declare(strict_types=1);
 
-namespace DH\AuditorBundle\Tests\DependencyInjection\Compiler;
+namespace Kachnitel\AuditorBundle\Tests\DependencyInjection\Compiler;
 
 use DH\Auditor\Provider\Doctrine\Persistence\Reader\Reader;
-use DH\AuditorBundle\Admin\AuditDataSourceFactory;
-use DH\AuditorBundle\DependencyInjection\Compiler\AdminBundleIntegrationPass;
+use Kachnitel\AuditorBundle\Admin\AuditDataSourceFactory;
+use Kachnitel\AuditorBundle\DependencyInjection\Compiler\AdminBundleIntegrationPass;
 use Matthias\SymfonyDependencyInjectionTest\PhpUnit\AbstractCompilerPassTestCase;
 use PHPUnit\Framework\Attributes\Small;
 use Symfony\Component\DependencyInjection\ContainerBuilder;
@@ -37,7 +37,7 @@ final class AdminBundleIntegrationPassTest extends AbstractCompilerPassTestCase
             AuditDataSourceFactory::class,
             'Kachnitel\AdminBundle\DataSource\DataSourceProviderInterface'
         );
-        $this->assertContainerBuilderHasAlias('dh_auditor.admin.data_source_factory', AuditDataSourceFactory::class);
+        $this->assertContainerBuilderHasAlias('kachnitel_auditor.admin.data_source_factory', AuditDataSourceFactory::class);
     }
 
     public function testDoesNotRegisterFactoryWhenReaderIsUnavailable(): void

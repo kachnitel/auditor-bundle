@@ -2,9 +2,9 @@
 
 declare(strict_types=1);
 
-namespace DH\AuditorBundle\Controller;
+namespace Kachnitel\AuditorBundle\Controller;
 
-use DH\AuditorBundle\Service\AuditReader;
+use Kachnitel\AuditorBundle\Service\AuditReader;
 use Symfony\Bundle\FrameworkBundle\Controller\AbstractController;
 use Symfony\Component\HttpFoundation\Request;
 use Symfony\Component\HttpFoundation\Response;

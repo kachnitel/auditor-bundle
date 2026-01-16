@@ -2,15 +2,15 @@
 
 declare(strict_types=1);
 
-namespace DH\AuditorBundle\Tests\DependencyInjection\Compiler;
+namespace Kachnitel\AuditorBundle\Tests\DependencyInjection\Compiler;
 
 use DH\Auditor\Configuration;
 use DH\Auditor\Tests\Provider\Doctrine\Fixtures\Entity\Standard\Blog\Author;
 use DH\Auditor\Tests\Provider\Doctrine\Fixtures\Entity\Standard\Blog\Comment;
 use DH\Auditor\Tests\Provider\Doctrine\Fixtures\Entity\Standard\Blog\Post;
 use DH\Auditor\Tests\Provider\Doctrine\Fixtures\Entity\Standard\Blog\Tag;
-use DH\AuditorBundle\DependencyInjection\Compiler\AddProviderCompilerPass;
-use DH\AuditorBundle\DependencyInjection\Compiler\CustomConfigurationCompilerPass;
+use Kachnitel\AuditorBundle\DependencyInjection\Compiler\AddProviderCompilerPass;
+use Kachnitel\AuditorBundle\DependencyInjection\Compiler\CustomConfigurationCompilerPass;
 use Matthias\SymfonyDependencyInjectionTest\PhpUnit\AbstractCompilerPassTestCase;
 use PHPUnit\Framework\Attributes\Small;
 use Symfony\Component\DependencyInjection\ContainerBuilder;
@@ -28,9 +28,9 @@ final class CustomConfigurationCompilerPassTest extends AbstractCompilerPassTest
         $config = [
             'enabled' => true,
             'timezone' => 'UTC',
-            'user_provider' => 'dh_auditor.user_provider',
-            'security_provider' => 'dh_auditor.security_provider',
-            'role_checker' => 'dh_auditor.role_checker',
+            'user_provider' => 'kachnitel_auditor.user_provider',
+            'security_provider' => 'kachnitel_auditor.security_provider',
+            'role_checker' => 'kachnitel_auditor.role_checker',
             'providers' => [
                 'doctrine' => [
                     'table_prefix' => '',
@@ -64,7 +64,7 @@ final class CustomConfigurationCompilerPassTest extends AbstractCompilerPassTest
                 ],
             ],
         ];
-        $this->setParameter('dh_auditor.configuration', $config);
+        $this->setParameter('kachnitel_auditor.configuration', $config);
 
         $auditorService = new Definition();
         $this->setDefinition(Configuration::class, $auditorService);
@@ -74,19 +74,19 @@ final class CustomConfigurationCompilerPassTest extends AbstractCompilerPassTest
         $this->assertContainerBuilderHasServiceDefinitionWithMethodCall(
             Configuration::class,
             'setRoleChecker',
-            [new Reference('dh_auditor.role_checker')]
+            [new Reference('kachnitel_auditor.role_checker')]
         );
 
         $this->assertContainerBuilderHasServiceDefinitionWithMethodCall(
             Configuration::class,
             'setUserProvider',
-            [new Reference('dh_auditor.user_provider')]
+            [new Reference('kachnitel_auditor.user_provider')]
         );
 
         $this->assertContainerBuilderHasServiceDefinitionWithMethodCall(
             Configuration::class,
             'setSecurityProvider',
-            [new Reference('dh_auditor.security_provider')]
+            [new Reference('kachnitel_auditor.security_provider')]
         );
     }
 

@@ -1260,12 +1260,12 @@ namespace Symfony\Component\DependencyInjection\Loader\Configurator;
  *     }>,
  *     role_hierarchy?: array<string, string|list<scalar|null>>,
  * }
- * @psalm-type DhAuditorConfig = array{
+ * @psalm-type KachnitelAuditorConfig = array{
  *     enabled?: bool, // Default: true
  *     timezone?: scalar|null, // Default: "UTC"
- *     user_provider?: scalar|null, // Default: "dh_auditor.user_provider"
- *     security_provider?: scalar|null, // Default: "dh_auditor.security_provider"
- *     role_checker?: scalar|null, // Default: "dh_auditor.role_checker"
+ *     user_provider?: scalar|null, // Default: "kachnitel_auditor.user_provider"
+ *     security_provider?: scalar|null, // Default: "kachnitel_auditor.security_provider"
+ *     role_checker?: scalar|null, // Default: "kachnitel_auditor.role_checker"
  *     providers?: array<string, mixed>,
  * }
  * @psalm-type ConfigType = array{
@@ -1276,7 +1276,7 @@ namespace Symfony\Component\DependencyInjection\Loader\Configurator;
  *     doctrine?: DoctrineConfig,
  *     twig?: TwigConfig,
  *     security?: SecurityConfig,
- *     dh_auditor?: DhAuditorConfig,
+ *     kachnitel_auditor?: KachnitelAuditorConfig,
  *     "when@test"?: array{
  *         imports?: ImportsConfig,
  *         parameters?: ParametersConfig,
@@ -1285,7 +1285,7 @@ namespace Symfony\Component\DependencyInjection\Loader\Configurator;
  *         doctrine?: DoctrineConfig,
  *         twig?: TwigConfig,
  *         security?: SecurityConfig,
- *         dh_auditor?: DhAuditorConfig,
+ *         kachnitel_auditor?: KachnitelAuditorConfig,
  *     },
  *     ...<string, ExtensionType|array{ // extra keys must follow the when@%env% pattern or match an extension alias
  *         imports?: ImportsConfig,

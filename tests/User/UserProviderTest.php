@@ -2,7 +2,7 @@
 
 declare(strict_types=1);
 
-namespace DH\AuditorBundle\Tests\User;
+namespace Kachnitel\AuditorBundle\Tests\User;
 
 use DH\Auditor\Provider\Doctrine\DoctrineProvider;
 use DH\Auditor\Tests\Provider\Doctrine\Fixtures\Entity\Standard\Blog\Post;

@@ -2,7 +2,7 @@
 
 declare(strict_types=1);
 
-namespace DH\AuditorBundle\Security;
+namespace Kachnitel\AuditorBundle\Security;
 
 use DH\Auditor\Provider\Doctrine\Configuration;
 use DH\Auditor\Provider\Doctrine\DoctrineProvider;

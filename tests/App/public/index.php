@@ -2,7 +2,7 @@
 
 declare(strict_types=1);
 
-use DH\AuditorBundle\Tests\App\Kernel;
+use Kachnitel\AuditorBundle\Tests\App\Kernel;
 use Symfony\Component\ErrorHandler\Debug;
 use Symfony\Component\HttpFoundation\Request;
 

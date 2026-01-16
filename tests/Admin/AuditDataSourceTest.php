@@ -2,7 +2,7 @@
 
 declare(strict_types=1);
 
-namespace DH\AuditorBundle\Tests\Admin;
+namespace Kachnitel\AuditorBundle\Tests\Admin;
 
 use DH\Auditor\Model\Entry;
 use DH\Auditor\Provider\Doctrine\DoctrineProvider;
@@ -10,8 +10,8 @@ use DH\Auditor\Provider\Doctrine\Persistence\Reader\Reader;
 use DH\Auditor\Tests\Provider\Doctrine\Fixtures\Entity\Standard\Blog\Author;
 use DH\Auditor\Tests\Provider\Doctrine\Traits\ReaderTrait;
 use DH\Auditor\Tests\Provider\Doctrine\Traits\Schema\BlogSchemaSetupTrait;
-use DH\AuditorBundle\Admin\AuditDataSource;
-use DH\AuditorBundle\Service\AuditReader;
+use Kachnitel\AuditorBundle\Admin\AuditDataSource;
+use Kachnitel\AuditorBundle\Service\AuditReader;
 use Kachnitel\AdminBundle\DataSource\ColumnMetadata;
 use Kachnitel\AdminBundle\DataSource\DataSourceInterface;
 use Kachnitel\AdminBundle\DataSource\FilterMetadata;

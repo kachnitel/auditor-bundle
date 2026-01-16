@@ -2,7 +2,7 @@
 
 declare(strict_types=1);
 
-namespace DH\AuditorBundle\DependencyInjection\Compiler;
+namespace Kachnitel\AuditorBundle\DependencyInjection\Compiler;
 
 use DH\Auditor\Auditor;
 use Symfony\Component\DependencyInjection\Compiler\CompilerPassInterface;
@@ -12,7 +12,7 @@ use Symfony\Component\DependencyInjection\Reference;
 class AddProviderCompilerPass implements CompilerPassInterface
 {
     /**
-     * Get all providers based on their tag (`dh_auditor.provider`) and register them.
+     * Get all providers based on their tag (`kachnitel_auditor.provider`) and register them.
      */
     public function process(ContainerBuilder $container): void
     {
@@ -23,7 +23,7 @@ class AddProviderCompilerPass implements CompilerPassInterface
         $auditorDefinition = $container->getDefinition(Auditor::class);
 
         $providers = [];
-        foreach (array_keys($container->findTaggedServiceIds('dh_auditor.provider')) as $providerId) {
+        foreach (array_keys($container->findTaggedServiceIds('kachnitel_auditor.provider')) as $providerId) {
             $providers[] = new Reference($providerId);
         }
 

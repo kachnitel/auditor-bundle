@@ -2,7 +2,7 @@
 
 declare(strict_types=1);
 
-namespace DH\AuditorBundle\Tests;
+namespace Kachnitel\AuditorBundle\Tests;
 
 use DH\Auditor\Auditor;
 use DH\Auditor\Configuration as AuditorConfiguration;
@@ -11,8 +11,8 @@ use DH\Auditor\Provider\Doctrine\DoctrineProvider;
 use DH\Auditor\Provider\Doctrine\Persistence\Event\CreateSchemaListener;
 use DH\Auditor\Provider\Doctrine\Persistence\Event\TableSchemaListener;
 use DH\Auditor\Provider\Doctrine\Persistence\Reader\Reader;
-use DH\AuditorBundle\DHAuditorBundle;
-use DH\AuditorBundle\Event\ConsoleEventSubscriber;
+use Kachnitel\AuditorBundle\KachnitelAuditorBundle;
+use Kachnitel\AuditorBundle\Event\ConsoleEventSubscriber;
 use Doctrine\Bundle\DoctrineBundle\DoctrineBundle;
 use Nyholm\BundleTest\TestKernel;
 use PHPUnit\Framework\Attributes\Small;
@@ -25,7 +25,7 @@ use Symfony\Component\HttpKernel\KernelInterface;
  * @internal
  */
 #[Small]
-final class DHAuditorBundleTest extends KernelTestCase
+final class KachnitelAuditorBundleTest extends KernelTestCase
 {
     public function testInitBundle(): void
     {
@@ -36,7 +36,7 @@ final class DHAuditorBundleTest extends KernelTestCase
             $kernel->addTestBundle(SecurityBundle::class);
 
             // Add some configuration
-            $kernel->addTestConfig(__DIR__.'/Fixtures/Resources/config/dh_auditor.yaml');
+            $kernel->addTestConfig(__DIR__.'/Fixtures/Resources/config/kachnitel_auditor.yaml');
             $kernel->addTestConfig(__DIR__.'/Fixtures/Resources/config/doctrine.yaml');
             if (Kernel::MAJOR_VERSION < 6) {
                 $kernel->addTestConfig(__DIR__.'/App/config/services_legacy.yaml');
@@ -61,8 +61,8 @@ final class DHAuditorBundleTest extends KernelTestCase
         $this->assertTrue($container->has(DoctrineProvider::class));
         $this->assertInstanceOf(DoctrineProvider::class, $container->get(DoctrineProvider::class));
 
-        $this->assertTrue($container->has('dh_auditor.provider.doctrine'));
-        $this->assertInstanceOf(DoctrineProvider::class, $container->get('dh_auditor.provider.doctrine'));
+        $this->assertTrue($container->has('kachnitel_auditor.provider.doctrine'));
+        $this->assertInstanceOf(DoctrineProvider::class, $container->get('kachnitel_auditor.provider.doctrine'));
 
         $this->assertTrue($container->has(Reader::class));
         $this->assertInstanceOf(Reader::class, $container->get(Reader::class));
@@ -88,7 +88,7 @@ final class DHAuditorBundleTest extends KernelTestCase
          * @var TestKernel $kernel
          */
         $kernel = parent::createKernel($options);
-        $kernel->addTestBundle(DHAuditorBundle::class);
+        $kernel->addTestBundle(KachnitelAuditorBundle::class);
         $kernel->handleOptions($options);
 
         return $kernel;

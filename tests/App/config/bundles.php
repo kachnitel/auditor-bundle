@@ -2,7 +2,7 @@
 
 declare(strict_types=1);
 
-use DH\AuditorBundle\DHAuditorBundle;
+use Kachnitel\AuditorBundle\KachnitelAuditorBundle;
 use Doctrine\Bundle\DoctrineBundle\DoctrineBundle;
 use Symfony\Bundle\FrameworkBundle\FrameworkBundle;
 use Symfony\Bundle\SecurityBundle\SecurityBundle;
@@ -13,7 +13,7 @@ $bundles = [
     DoctrineBundle::class => ['all' => true],
     TwigBundle::class => ['all' => true],
     SecurityBundle::class => ['all' => true],
-    DHAuditorBundle::class => ['all' => true],
+    KachnitelAuditorBundle::class => ['all' => true],
 ];
 
 // Only load TwigExtraBundle if it's installed

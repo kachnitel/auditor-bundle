@@ -1,19 +1,26 @@
 {
-  "name": "damienharper/auditor-bundle",
+  "name": "kachnitel/auditor-bundle",
   "type": "symfony-bundle",
-  "description": "Integrate auditor library in your Symfony projects.",
+  "description": "Fork of damienharper/auditor-bundle with additional features (AuditContext, AuditReader, Snapshot, EventAuditService, admin integration).",
   "keywords": [
     "doctrine",
     "audit",
     "auditor",
     "audit-log",
-    "audit-trail"
+    "audit-trail",
+    "symfony"
   ],
   "license": "MIT",
   "authors": [
     {
       "name": "Damien Harper",
-      "email": "damien.harper@gmail.com"
+      "email": "damien.harper@gmail.com",
+      "role": "Original Author"
+    },
+    {
+      "name": "Ondrej Vana",
+      "email": "vana.ondrej@gmail.com",
+      "role": "Fork Maintainer"
     }
   ],
   "require": {
@@ -31,12 +38,12 @@
   },
   "autoload": {
     "psr-4": {
-      "DH\\AuditorBundle\\": "src"
+      "Kachnitel\\AuditorBundle\\": "src"
     }
   },
   "autoload-dev": {
     "psr-4": {
-      "DH\\AuditorBundle\\Tests\\": "tests",
+      "Kachnitel\\AuditorBundle\\Tests\\": "tests",
       "DH\\Auditor\\Tests\\": "vendor/damienharper/auditor/tests",
       "Kachnitel\\AdminBundle\\": "tests/Stubs/AdminBundle"
     }

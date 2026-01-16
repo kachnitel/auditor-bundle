@@ -2,7 +2,7 @@
 
 declare(strict_types=1);
 
-namespace DH\AuditorBundle\DependencyInjection;
+namespace Kachnitel\AuditorBundle\DependencyInjection;
 
 use DH\Auditor\Provider\ProviderInterface;
 use Symfony\Component\Config\FileLocator;
@@ -10,7 +10,7 @@ use Symfony\Component\DependencyInjection\ContainerBuilder;
 use Symfony\Component\DependencyInjection\Extension\Extension;
 use Symfony\Component\DependencyInjection\Loader;
 
-class DHAuditorExtension extends Extension
+class KachnitelAuditorExtension extends Extension
 {
     public function load(array $configs, ContainerBuilder $container): void
     {
@@ -22,7 +22,7 @@ class DHAuditorExtension extends Extension
 
         $auditorConfig = $config;
         unset($auditorConfig['providers']);
-        $container->setParameter('dh_auditor.configuration', $auditorConfig);
+        $container->setParameter('kachnitel_auditor.configuration', $auditorConfig);
 
         $this->loadProviders($container, $config);
     }
@@ -30,9 +30,9 @@ class DHAuditorExtension extends Extension
     private function loadProviders(ContainerBuilder $container, array $config): void
     {
         foreach ($config['providers'] as $providerName => $providerConfig) {
-            $container->setParameter('dh_auditor.provider.'.$providerName.'.configuration', $providerConfig);
+            $container->setParameter('kachnitel_auditor.provider.'.$providerName.'.configuration', $providerConfig);
 
-            $container->registerAliasForArgument('dh_auditor.provider.'.$providerName, ProviderInterface::class, \sprintf('%sProvider', $providerName));
+            $container->registerAliasForArgument('kachnitel_auditor.provider.'.$providerName, ProviderInterface::class, \sprintf('%sProvider', $providerName));
         }
     }
 }

@@ -3,4 +3,4 @@ services:
     autowire: true
     autoconfigure: true
 
-  DH\AuditorBundle\Tests\App\Command\CreatePostCommand:
+  Kachnitel\AuditorBundle\Tests\App\Command\CreatePostCommand:

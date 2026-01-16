@@ -2,12 +2,12 @@
 
 declare(strict_types=1);
 
-namespace DH\AuditorBundle\Admin;
+namespace Kachnitel\AuditorBundle\Admin;
 
 use DH\Auditor\Provider\Doctrine\Persistence\Reader\Reader;
 use DH\Auditor\Provider\Doctrine\Persistence\Schema\SchemaManager;
 use DH\Auditor\Provider\Doctrine\Service\AuditingService;
-use DH\AuditorBundle\Service\AuditReader;
+use Kachnitel\AuditorBundle\Service\AuditReader;
 use Kachnitel\AdminBundle\DataSource\DataSourceProviderInterface;
 
 /**

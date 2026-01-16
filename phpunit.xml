@@ -11,7 +11,7 @@
   <logging/>
   <php>
     <ini name="error_reporting" value="-1"/>
-    <server name="KERNEL_CLASS" value="DH\AuditorBundle\Tests\App\Kernel"/>
+    <server name="KERNEL_CLASS" value="Kachnitel\AuditorBundle\Tests\App\Kernel"/>
     <server name="APP_ENV" value="test" force="true"/>
     <server name="SHELL_VERBOSITY" value="-1"/>
     <!--        <server name="SYMFONY_DEPRECATIONS_HELPER" value="weak"/>-->

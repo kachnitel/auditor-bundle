@@ -2,7 +2,7 @@
 
 declare(strict_types=1);
 
-namespace DH\AuditorBundle\Service;
+namespace Kachnitel\AuditorBundle\Service;
 
 /**
  * Request-scoped service for passing contextual information to audits.

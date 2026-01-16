@@ -2,9 +2,9 @@
 
 declare(strict_types=1);
 
-namespace DH\AuditorBundle\Tests\DependencyInjection\Compiler;
+namespace Kachnitel\AuditorBundle\Tests\DependencyInjection\Compiler;
 
-use DH\AuditorBundle\DependencyInjection\Compiler\DoctrineProviderConfigurationCompilerPass;
+use Kachnitel\AuditorBundle\DependencyInjection\Compiler\DoctrineProviderConfigurationCompilerPass;
 use Matthias\SymfonyDependencyInjectionTest\PhpUnit\AbstractCompilerPassTestCase;
 use PHPUnit\Framework\Attributes\Small;
 use Symfony\Component\DependencyInjection\ContainerBuilder;
@@ -24,7 +24,7 @@ final class StorageConfigurationCompilerPassTest extends AbstractCompilerPassTes
     //    {
     //        $this->compile();
     //
-    //        $serviceId = 'dh_auditor.provider.doctrine.storage_services.doctrine.orm.default_entity_manager';
+    //        $serviceId = 'kachnitel_auditor.provider.doctrine.storage_services.doctrine.orm.default_entity_manager';
     //        $this->assertContainerBuilderHasAlias($serviceId, StorageService::class);
     //        $this->assertContainerBuilderHasService($serviceId, StorageService::class);
     //    }

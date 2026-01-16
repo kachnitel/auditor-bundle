@@ -1,6 +1,6 @@
 # Configuration reference available at:
 # https://github.com/DamienHarper/DoctrineAuditBundle#configuration
-dh_auditor:
+kachnitel_auditor:
     providers:
         doctrine:
             entities:

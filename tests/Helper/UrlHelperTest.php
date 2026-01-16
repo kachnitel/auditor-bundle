@@ -2,10 +2,10 @@
 
 declare(strict_types=1);
 
-namespace DH\AuditorBundle\Tests\Helper;
+namespace Kachnitel\AuditorBundle\Tests\Helper;
 
 use DH\Auditor\Tests\Provider\Doctrine\Fixtures\Entity\Standard\Blog\Author;
-use DH\AuditorBundle\Helper\UrlHelper;
+use Kachnitel\AuditorBundle\Helper\UrlHelper;
 use PHPUnit\Framework\Attributes\Small;
 use PHPUnit\Framework\TestCase;
 

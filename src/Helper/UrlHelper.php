@@ -2,9 +2,9 @@
 
 declare(strict_types=1);
 
-namespace DH\AuditorBundle\Helper;
+namespace Kachnitel\AuditorBundle\Helper;
 
-use DH\AuditorBundle\Tests\Helper\UrlHelperTest;
+use Kachnitel\AuditorBundle\Tests\Helper\UrlHelperTest;
 
 /**
  * @see UrlHelperTest

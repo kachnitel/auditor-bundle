@@ -2,7 +2,7 @@
 
 declare(strict_types=1);
 
-namespace DH\AuditorBundle\Security;
+namespace Kachnitel\AuditorBundle\Security;
 
 use DH\Auditor\Security\SecurityProviderInterface;
 use Symfony\Bundle\SecurityBundle\Security\FirewallConfig;

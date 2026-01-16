@@ -2,7 +2,7 @@
 
 declare(strict_types=1);
 
-namespace DH\AuditorBundle\Tests\DependencyInjection\Compiler;
+namespace Kachnitel\AuditorBundle\Tests\DependencyInjection\Compiler;
 
 use DH\Auditor\Configuration;
 use DH\Auditor\Provider\Doctrine\Auditing\DBAL\Middleware\AuditorMiddleware;
@@ -10,8 +10,8 @@ use DH\Auditor\Tests\Provider\Doctrine\Fixtures\Entity\Standard\Blog\Author;
 use DH\Auditor\Tests\Provider\Doctrine\Fixtures\Entity\Standard\Blog\Comment;
 use DH\Auditor\Tests\Provider\Doctrine\Fixtures\Entity\Standard\Blog\Post;
 use DH\Auditor\Tests\Provider\Doctrine\Fixtures\Entity\Standard\Blog\Tag;
-use DH\AuditorBundle\DependencyInjection\Compiler\DoctrineProviderConfigurationCompilerPass;
-use DH\AuditorBundle\DependencyInjection\DHAuditorExtension;
+use Kachnitel\AuditorBundle\DependencyInjection\Compiler\DoctrineProviderConfigurationCompilerPass;
+use Kachnitel\AuditorBundle\DependencyInjection\KachnitelAuditorExtension;
 use Doctrine\Bundle\DoctrineBundle\DependencyInjection\DoctrineExtension;
 use Doctrine\DBAL\Driver\Middleware;
 use Matthias\SymfonyDependencyInjectionTest\PhpUnit\AbstractCompilerPassTestCase;
@@ -52,9 +52,9 @@ final class DoctrineMiddlewareCompilerPassTest extends AbstractCompilerPassTestC
         $DHConfig = [
             'enabled' => true,
             'timezone' => 'UTC',
-            'user_provider' => 'dh_auditor.user_provider',
-            'security_provider' => 'dh_auditor.security_provider',
-            'role_checker' => 'dh_auditor.role_checker',
+            'user_provider' => 'kachnitel_auditor.user_provider',
+            'security_provider' => 'kachnitel_auditor.security_provider',
+            'role_checker' => 'kachnitel_auditor.role_checker',
             'providers' => [
                 'doctrine' => [
                     'table_prefix' => '',
@@ -88,12 +88,12 @@ final class DoctrineMiddlewareCompilerPassTest extends AbstractCompilerPassTestC
                 ],
             ],
         ];
-        $this->setParameter('dh_auditor.configuration', $DHConfig);
+        $this->setParameter('kachnitel_auditor.configuration', $DHConfig);
 
         $auditorService = new Definition();
         $this->setDefinition(Configuration::class, $auditorService);
         $this->container->loadFromExtension('doctrine', $doctrineConfig);
-        $this->container->loadFromExtension('dh_auditor', $DHConfig);
+        $this->container->loadFromExtension('kachnitel_auditor', $DHConfig);
         $this->compile();
 
         $this->assertContainerBuilderHasServiceDefinitionWithTag(
@@ -105,7 +105,7 @@ final class DoctrineMiddlewareCompilerPassTest extends AbstractCompilerPassTestC
     protected function registerCompilerPass(ContainerBuilder $container): void
     {
         $this->container->registerExtension(new DoctrineExtension());
-        $this->container->registerExtension(new DHAuditorExtension());
+        $this->container->registerExtension(new KachnitelAuditorExtension());
         $container->addCompilerPass(new DoctrineProviderConfigurationCompilerPass());
     }
 }

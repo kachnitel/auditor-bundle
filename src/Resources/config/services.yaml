@@ -2,7 +2,7 @@ services:
   DH\Auditor\Configuration:
     class: DH\Auditor\Configuration
     arguments:
-      - '%dh_auditor.configuration%'
+      - '%kachnitel_auditor.configuration%'
 
   DH\Auditor\Auditor:
     class: DH\Auditor\Auditor
@@ -14,7 +14,7 @@ services:
   DH\Auditor\Provider\Doctrine\Configuration:
     class: DH\Auditor\Provider\Doctrine\Configuration
     arguments:
-      - '%dh_auditor.provider.doctrine.configuration%'
+      - '%kachnitel_auditor.provider.doctrine.configuration%'
 
   DH\Auditor\Provider\Doctrine\DoctrineProvider:
     class: DH\Auditor\Provider\Doctrine\DoctrineProvider
@@ -23,8 +23,8 @@ services:
     calls:
       - [setAuditor, ['@DH\Auditor\Auditor']]
     tags:
-      - { name: dh_auditor.provider }
-  dh_auditor.provider.doctrine: '@DH\Auditor\Provider\Doctrine\DoctrineProvider'
+      - { name: kachnitel_auditor.provider }
+  kachnitel_auditor.provider.doctrine: '@DH\Auditor\Provider\Doctrine\DoctrineProvider'
 
   DH\Auditor\Provider\Doctrine\Persistence\Reader\Reader:
     class: DH\Auditor\Provider\Doctrine\Persistence\Reader\Reader
@@ -59,72 +59,72 @@ services:
       - [setAuditor, ['@DH\Auditor\Auditor']]
 
   # Bundle related services
-  DH\AuditorBundle\User\UserProvider:
-    class: DH\AuditorBundle\User\UserProvider
+  Kachnitel\AuditorBundle\User\UserProvider:
+    class: Kachnitel\AuditorBundle\User\UserProvider
     arguments: ['@security.token_storage']
-  dh_auditor.user_provider: '@DH\AuditorBundle\User\UserProvider'
+  kachnitel_auditor.user_provider: '@Kachnitel\AuditorBundle\User\UserProvider'
 
-  DH\AuditorBundle\User\ConsoleUserProvider:
-    class: DH\AuditorBundle\User\ConsoleUserProvider
+  Kachnitel\AuditorBundle\User\ConsoleUserProvider:
+    class: Kachnitel\AuditorBundle\User\ConsoleUserProvider
 
-  DH\AuditorBundle\Security\SecurityProvider:
-    class: DH\AuditorBundle\Security\SecurityProvider
+  Kachnitel\AuditorBundle\Security\SecurityProvider:
+    class: Kachnitel\AuditorBundle\Security\SecurityProvider
     arguments: ['@request_stack', '@security.firewall.map']
-  dh_auditor.security_provider: '@DH\AuditorBundle\Security\SecurityProvider'
+  kachnitel_auditor.security_provider: '@Kachnitel\AuditorBundle\Security\SecurityProvider'
 
-  DH\AuditorBundle\Security\RoleChecker:
-    class: DH\AuditorBundle\Security\RoleChecker
+  Kachnitel\AuditorBundle\Security\RoleChecker:
+    class: Kachnitel\AuditorBundle\Security\RoleChecker
     arguments: ['@security.authorization_checker', '@DH\Auditor\Provider\Doctrine\DoctrineProvider']
-  dh_auditor.role_checker: '@DH\AuditorBundle\Security\RoleChecker'
+  kachnitel_auditor.role_checker: '@Kachnitel\AuditorBundle\Security\RoleChecker'
 
-  DH\AuditorBundle\Event\ConsoleEventSubscriber:
-    arguments: ['@DH\AuditorBundle\User\ConsoleUserProvider', '@DH\Auditor\Configuration', '@dh_auditor.user_provider']
+  Kachnitel\AuditorBundle\Event\ConsoleEventSubscriber:
+    arguments: ['@Kachnitel\AuditorBundle\User\ConsoleUserProvider', '@DH\Auditor\Configuration', '@kachnitel_auditor.user_provider']
     tags:
       - { name: kernel.event_subscriber }
 
   # AuditContext - request-scoped service for passing context to audits
-  DH\AuditorBundle\Service\AuditContext:
-    class: DH\AuditorBundle\Service\AuditContext
-  dh_auditor.context: '@DH\AuditorBundle\Service\AuditContext'
+  Kachnitel\AuditorBundle\Service\AuditContext:
+    class: Kachnitel\AuditorBundle\Service\AuditContext
+  kachnitel_auditor.context: '@Kachnitel\AuditorBundle\Service\AuditContext'
 
-  DH\AuditorBundle\Event\AuditContextSubscriber:
-    class: DH\AuditorBundle\Event\AuditContextSubscriber
-    arguments: ['@DH\AuditorBundle\Service\AuditContext']
+  Kachnitel\AuditorBundle\Event\AuditContextSubscriber:
+    class: Kachnitel\AuditorBundle\Event\AuditContextSubscriber
+    arguments: ['@Kachnitel\AuditorBundle\Service\AuditContext']
     tags:
       - { name: kernel.event_subscriber }
 
-  DH\AuditorBundle\Event\RequestIdSubscriber:
-    class: DH\AuditorBundle\Event\RequestIdSubscriber
-    arguments: ['@DH\AuditorBundle\Service\AuditContext']
+  Kachnitel\AuditorBundle\Event\RequestIdSubscriber:
+    class: Kachnitel\AuditorBundle\Event\RequestIdSubscriber
+    arguments: ['@Kachnitel\AuditorBundle\Service\AuditContext']
     tags:
       - { name: kernel.event_subscriber }
 
   # EventAuditService - for creating EVENT-type audit entries
-  DH\AuditorBundle\Service\EventAuditService:
-    class: DH\AuditorBundle\Service\EventAuditService
+  Kachnitel\AuditorBundle\Service\EventAuditService:
+    class: Kachnitel\AuditorBundle\Service\EventAuditService
     arguments:
       - '@DH\Auditor\Auditor'
       - '@DH\Auditor\Provider\Doctrine\DoctrineProvider'
       - '@doctrine.orm.entity_manager'
-      - '@DH\AuditorBundle\Service\AuditContext'
-  dh_auditor.event_service: '@DH\AuditorBundle\Service\EventAuditService'
+      - '@Kachnitel\AuditorBundle\Service\AuditContext'
+  kachnitel_auditor.event_service: '@Kachnitel\AuditorBundle\Service\EventAuditService'
 
   # Snapshot - for reconstructing entity state at a point in time
-  DH\AuditorBundle\Service\Snapshot:
-    class: DH\AuditorBundle\Service\Snapshot
+  Kachnitel\AuditorBundle\Service\Snapshot:
+    class: Kachnitel\AuditorBundle\Service\Snapshot
     public: true
     arguments:
       - '@DH\Auditor\Provider\Doctrine\Persistence\Reader\Reader'
       - '@doctrine.orm.entity_manager'
-  dh_auditor.snapshot: '@DH\AuditorBundle\Service\Snapshot'
+  kachnitel_auditor.snapshot: '@Kachnitel\AuditorBundle\Service\Snapshot'
 
   # AuditReader - for querying audit entries
-  DH\AuditorBundle\Service\AuditReader:
-    class: DH\AuditorBundle\Service\AuditReader
+  Kachnitel\AuditorBundle\Service\AuditReader:
+    class: Kachnitel\AuditorBundle\Service\AuditReader
     public: true
     arguments:
       - '@DH\Auditor\Provider\Doctrine\Persistence\Reader\Reader'
-  dh_auditor.reader: '@DH\AuditorBundle\Service\AuditReader'
+  kachnitel_auditor.reader: '@Kachnitel\AuditorBundle\Service\AuditReader'
 
   # Note: TimelineController and AuditorRouteLoader are registered conditionally
   # via AdminBundleIntegrationPass when kachnitel/admin-bundle is installed

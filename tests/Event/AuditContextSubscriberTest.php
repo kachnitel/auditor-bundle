@@ -2,11 +2,11 @@
 
 declare(strict_types=1);
 
-namespace DH\AuditorBundle\Tests\Event;
+namespace Kachnitel\AuditorBundle\Tests\Event;
 
 use DH\Auditor\Event\LifecycleEvent;
-use DH\AuditorBundle\Event\AuditContextSubscriber;
-use DH\AuditorBundle\Service\AuditContext;
+use Kachnitel\AuditorBundle\Event\AuditContextSubscriber;
+use Kachnitel\AuditorBundle\Service\AuditContext;
 use PHPUnit\Framework\Attributes\Small;
 use PHPUnit\Framework\TestCase;
 

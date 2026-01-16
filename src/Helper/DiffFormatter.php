@@ -2,7 +2,7 @@
 
 declare(strict_types=1);
 
-namespace DH\AuditorBundle\Helper;
+namespace Kachnitel\AuditorBundle\Helper;
 
 /**
  * Formats audit diffs into human-readable previews.

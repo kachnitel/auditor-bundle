@@ -2,10 +2,10 @@
 
 declare(strict_types=1);
 
-namespace DH\AuditorBundle\DependencyInjection\Compiler;
+namespace Kachnitel\AuditorBundle\DependencyInjection\Compiler;
 
 use DH\Auditor\Configuration;
-use DH\AuditorBundle\Tests\DependencyInjection\Compiler\CustomConfigurationCompilerPassTest;
+use Kachnitel\AuditorBundle\Tests\DependencyInjection\Compiler\CustomConfigurationCompilerPassTest;
 use Symfony\Component\DependencyInjection\Compiler\CompilerPassInterface;
 use Symfony\Component\DependencyInjection\ContainerBuilder;
 use Symfony\Component\DependencyInjection\Reference;
@@ -21,12 +21,12 @@ class CustomConfigurationCompilerPass implements CompilerPassInterface
             return;
         }
 
-        if (!$container->hasParameter('dh_auditor.configuration')) {
+        if (!$container->hasParameter('kachnitel_auditor.configuration')) {
             return;
         }
 
         $providerDefinition = $container->getDefinition(Configuration::class);
-        $config = $container->getParameter('dh_auditor.configuration');
+        $config = $container->getParameter('kachnitel_auditor.configuration');
 
         // User provider service
         \assert(\is_array($config) && \array_key_exists('user_provider', $config));
