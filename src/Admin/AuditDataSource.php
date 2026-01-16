@@ -64,14 +64,14 @@ class AuditDataSource implements DataSourceInterface
                 label: 'Changes',
                 type: 'json',
                 sortable: false,
-                template: '@DHAuditor/Admin/Audit/_changes-preview.html.twig',
+                template: '@KachnitelAuditor/Admin/Audit/_changes-preview.html.twig',
             ),
             'actions' => new ColumnMetadata(
                 name: 'actions',
                 label: '',
                 type: 'actions',
                 sortable: false,
-                template: '@DHAuditor/Admin/Audit/_row-actions.html.twig',
+                template: '@KachnitelAuditor/Admin/Audit/_row-actions.html.twig',
             ),
         ];
     }

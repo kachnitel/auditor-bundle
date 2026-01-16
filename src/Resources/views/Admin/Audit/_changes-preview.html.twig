@@ -1,5 +1,5 @@
 {# Inline preview of audit changes for table display - similar to old "updated" block #}
-{# Usage: include '@DHAuditor/Admin/Audit/_changes-preview.html.twig' with {entry: entry, item: item, dataSource: dataSource} #}
+{# Usage: include '@KachnitelAuditor/Admin/Audit/_changes-preview.html.twig' with {entry: entry, item: item, dataSource: dataSource} #}
 
 {% set diffs = item.getDiffs() %}
 {% set diffsWithMeta = item.getDiffs(true) %}

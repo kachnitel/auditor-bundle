@@ -406,7 +406,7 @@ final class AuditDataSourceTest extends KernelTestCase
         $this->assertInstanceOf(ColumnMetadata::class, $columns['actions']);
         $this->assertSame('actions', $columns['actions']->type);
         $this->assertFalse($columns['actions']->sortable);
-        $this->assertSame('@DHAuditor/Admin/Audit/_row-actions.html.twig', $columns['actions']->template);
+        $this->assertSame('@KachnitelAuditor/Admin/Audit/_row-actions.html.twig', $columns['actions']->template);
     }
 
     public function testGetColumnsIncludesDiffsColumnWithTemplate(): void
@@ -416,7 +416,7 @@ final class AuditDataSourceTest extends KernelTestCase
         $this->assertArrayHasKey('diffs', $columns);
         $this->assertSame('json', $columns['diffs']->type);
         $this->assertFalse($columns['diffs']->sortable);
-        $this->assertSame('@DHAuditor/Admin/Audit/_changes-preview.html.twig', $columns['diffs']->template);
+        $this->assertSame('@KachnitelAuditor/Admin/Audit/_changes-preview.html.twig', $columns['diffs']->template);
     }
 
     // =========================================================================

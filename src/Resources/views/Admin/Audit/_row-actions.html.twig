@@ -1,5 +1,5 @@
 {# Row actions for audit list view - user/request filter buttons #}
-{# Usage: include '@DHAuditor/Admin/Audit/_row-actions.html.twig' with {item: item, dataSource: dataSource} #}
+{# Usage: include '@KachnitelAuditor/Admin/Audit/_row-actions.html.twig' with {item: item, dataSource: dataSource} #}
 
 {% set diffsWithMeta = item.getDiffs(true) %}
 {% set requestId = diffsWithMeta['@context']['request_id']|default(null) %}

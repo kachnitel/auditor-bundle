@@ -1,5 +1,5 @@
 {# Audit entry detail view for admin bundle #}
-{# Usage: include '@DHAuditor/Admin/Audit/detail.html.twig' with {entry: entry, dataSource: dataSource} #}
+{# Usage: include '@KachnitelAuditor/Admin/Audit/detail.html.twig' with {entry: entry, dataSource: dataSource} #}
 
 {% set diffsWithMeta = entry.getDiffs(true) %}
 {% set requestId = diffsWithMeta['@context']['request_id']|default(null) %}

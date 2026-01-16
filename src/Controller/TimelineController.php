@@ -46,7 +46,7 @@ class TimelineController extends AbstractController
 
         // Validate required parameters
         if ('' === $user || '' === $fromStr || '' === $toStr) {
-            return $this->render('@DHAuditor/Admin/Audit/timeline.html.twig', [
+            return $this->render('@KachnitelAuditor/Admin/Audit/timeline.html.twig', [
                 'error' => 'Missing required parameters: user, from, and to are required.',
                 'entries' => [],
                 'user' => $user,
@@ -69,7 +69,7 @@ class TimelineController extends AbstractController
             $from = new \DateTimeImmutable($fromStr, $timezone);
             $to = new \DateTimeImmutable($toStr, $timezone);
         } catch (\Exception $e) {
-            return $this->render('@DHAuditor/Admin/Audit/timeline.html.twig', [
+            return $this->render('@KachnitelAuditor/Admin/Audit/timeline.html.twig', [
                 'error' => 'Invalid date format: '.$e->getMessage(),
                 'entries' => [],
                 'user' => $user,
@@ -155,7 +155,7 @@ class TimelineController extends AbstractController
             return ($a['entry']->getId() ?? 0) <=> ($b['entry']->getId() ?? 0);
         });
 
-        return $this->render('@DHAuditor/Admin/Audit/timeline.html.twig', [
+        return $this->render('@KachnitelAuditor/Admin/Audit/timeline.html.twig', [
             'entries' => $allEntries,
             'user' => $user,
             'from' => $from,
