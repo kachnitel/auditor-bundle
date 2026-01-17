@@ -39,4 +39,9 @@ final class FilterMetadata
     {
         return new self($name, 'daterange', $label, null, null, $priority);
     }
+
+    public static function boolean(string $name, string $label, bool $showAllOption = true, ?int $priority = null): self
+    {
+        return new self($name, 'boolean', $label, null, null, $priority);
+    }
 }
