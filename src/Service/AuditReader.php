@@ -37,7 +37,7 @@ class AuditReader
      * @param null|array<int|string>  $ids         Entity IDs to filter (null for all)
      * @param null|\DateTimeInterface $from        Start date (inclusive)
      * @param null|\DateTimeInterface $to          End date (exclusive)
-     * @param null|string             $type        Audit type filter ('insert', 'update', 'delete', 'associate', 'dissociate')
+     * @param null|string             $type        Audit type filter ('insert', 'update', 'delete', 'associate', 'dissociate', 'event')
      * @param string                  $orderBy     Field to order by (id, created_at, object_id)
      * @param string                  $order       Sort direction (ASC, DESC)
      *
