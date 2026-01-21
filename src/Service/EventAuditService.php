@@ -9,6 +9,7 @@ use DH\Auditor\Event\LifecycleEvent;
 use DH\Auditor\Provider\Doctrine\Configuration;
 use DH\Auditor\Provider\Doctrine\DoctrineProvider;
 use DH\Auditor\Provider\Doctrine\Persistence\Helper\DoctrineHelper;
+use DH\Auditor\User\UserInterface;
 use Doctrine\ORM\EntityManagerInterface;
 
 /**
@@ -97,13 +98,24 @@ class EventAuditService
         $userProvider = $configuration->getUserProvider();
         $securityProvider = $configuration->getSecurityProvider();
 
+        /** @var null|UserInterface $user */
         $user = null !== $userProvider ? $userProvider() : null;
         $security = null !== $securityProvider ? $securityProvider() : [null, null];
 
+        if ($user instanceof UserInterface) {
+            $userId = $user->getIdentifier();
+            $username = $user->getUsername();
+            $userFqdn = $user::class;
+        } else {
+            $userId = null;
+            $username = null;
+            $userFqdn = null;
+        }
+
         return [
-            'user_id' => $user['id'] ?? null,
-            'username' => $user['username'] ?? null,
-            'user_fqdn' => $user['entity'] ?? null,
+            'user_id' => $userId,
+            'username' => $username,
+            'user_fqdn' => $userFqdn,
             'user_firewall' => $security[1] ?? null,
             'client_ip' => $security[0] ?? null,
         ];
