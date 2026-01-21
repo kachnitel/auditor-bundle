@@ -9,10 +9,10 @@ use DH\Auditor\Provider\Doctrine\Persistence\Reader\Reader;
 use DH\Auditor\Tests\Provider\Doctrine\Fixtures\Entity\Standard\Blog\Author;
 use DH\Auditor\Tests\Provider\Doctrine\Traits\ReaderTrait;
 use DH\Auditor\Tests\Provider\Doctrine\Traits\Schema\BlogSchemaSetupTrait;
+use Kachnitel\AdminBundle\DataSource\DataSourceProviderInterface;
 use Kachnitel\AuditorBundle\Admin\AuditDataSource;
 use Kachnitel\AuditorBundle\Admin\AuditDataSourceFactory;
 use Kachnitel\AuditorBundle\Service\AuditReader;
-use Kachnitel\AdminBundle\DataSource\DataSourceProviderInterface;
 use PHPUnit\Framework\Attributes\Small;
 use Symfony\Bundle\FrameworkBundle\Test\KernelTestCase;
 

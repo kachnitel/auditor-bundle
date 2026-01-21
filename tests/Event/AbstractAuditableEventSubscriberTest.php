@@ -36,7 +36,8 @@ final class AbstractAuditableEventSubscriberTest extends TestCase
 
         $this->eventAuditService->expects($this->once())
             ->method('createEvent')
-            ->with($entity, 'test.event', []);
+            ->with($entity, 'test.event', [])
+        ;
 
         $this->subscriber->onAuditableEvent($event);
     }
@@ -49,7 +50,8 @@ final class AbstractAuditableEventSubscriberTest extends TestCase
 
         $this->eventAuditService->expects($this->once())
             ->method('createEvent')
-            ->with($entity, 'data.event', $data);
+            ->with($entity, 'data.event', $data)
+        ;
 
         $this->subscriber->onAuditableEvent($event);
     }
@@ -71,7 +73,8 @@ final class AbstractAuditableEventSubscriberTest extends TestCase
 
         $this->eventAuditService->expects($this->once())
             ->method('createEvent')
-            ->with($entity, 'entity.updated', $expectedData);
+            ->with($entity, 'entity.updated', $expectedData)
+        ;
 
         $this->subscriber->onAuditableEvent($event);
     }
@@ -87,10 +90,11 @@ final class AbstractAuditableEventSubscriberTest extends TestCase
             ->with(
                 $entity,
                 'basic.event',
-                $this->callback(function (array $passedData): bool {
+                $this->callback(static function (array $passedData): bool {
                     return !\array_key_exists('changes', $passedData);
                 })
-            );
+            )
+        ;
 
         $this->subscriber->onAuditableEvent($event);
     }
@@ -146,7 +150,7 @@ final class TestAuditableEvent implements AuditableEventInterface
 final class TestAuditableEventWithChanges implements AuditableEventWithChangesInterface
 {
     /**
-     * @param array<string, mixed>                      $data
+     * @param array<string, mixed>                         $data
      * @param array<string, array{old: mixed, new: mixed}> $changes
      */
     public function __construct(

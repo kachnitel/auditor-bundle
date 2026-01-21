@@ -9,13 +9,13 @@ use DH\Auditor\Provider\Doctrine\Persistence\Reader\Filter\DateRangeFilter;
 use DH\Auditor\Provider\Doctrine\Persistence\Reader\Filter\SimpleFilter;
 use DH\Auditor\Provider\Doctrine\Persistence\Reader\Query;
 use DH\Auditor\Provider\Doctrine\Persistence\Reader\Reader;
-use Kachnitel\AuditorBundle\Helper\DiffFormatter;
-use Kachnitel\AuditorBundle\Helper\UrlHelper;
-use Kachnitel\AuditorBundle\Service\AuditReader;
 use Kachnitel\AdminBundle\DataSource\ColumnMetadata;
 use Kachnitel\AdminBundle\DataSource\DataSourceInterface;
 use Kachnitel\AdminBundle\DataSource\FilterMetadata;
 use Kachnitel\AdminBundle\DataSource\PaginatedResult;
+use Kachnitel\AuditorBundle\Helper\DiffFormatter;
+use Kachnitel\AuditorBundle\Helper\UrlHelper;
+use Kachnitel\AuditorBundle\Service\AuditReader;
 
 /**
  * Data source for audit logs of a specific entity.
@@ -424,7 +424,7 @@ class AuditDataSource implements DataSourceInterface
             $this->reader->getProvider()->getAuditor()->getConfiguration()->getTimezone()
         );
 
-        return array_values(array_filter($entries, function (Entry $entry) use ($filters, $timezone): bool {
+        return array_values(array_filter($entries, static function (Entry $entry) use ($filters, $timezone): bool {
             // Object ID filter
             if (!empty($filters['object_id']) && $entry->getObjectId() !== $filters['object_id']) {
                 return false;
@@ -479,11 +479,7 @@ class AuditDataSource implements DataSourceInterface
             }
 
             // Transaction hash filter
-            if (!empty($filters['transaction_hash']) && $entry->getTransactionHash() !== $filters['transaction_hash']) {
-                return false;
-            }
-
-            return true;
+            return !(!empty($filters['transaction_hash']) && $entry->getTransactionHash() !== $filters['transaction_hash']);
         }));
     }
 

@@ -7,8 +7,8 @@ namespace Kachnitel\AuditorBundle\Admin;
 use DH\Auditor\Provider\Doctrine\Persistence\Reader\Reader;
 use DH\Auditor\Provider\Doctrine\Persistence\Schema\SchemaManager;
 use DH\Auditor\Provider\Doctrine\Service\AuditingService;
-use Kachnitel\AuditorBundle\Service\AuditReader;
 use Kachnitel\AdminBundle\DataSource\DataSourceProviderInterface;
+use Kachnitel\AuditorBundle\Service\AuditReader;
 
 /**
  * Factory for creating AuditDataSource instances.

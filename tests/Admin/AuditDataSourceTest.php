@@ -10,12 +10,12 @@ use DH\Auditor\Provider\Doctrine\Persistence\Reader\Reader;
 use DH\Auditor\Tests\Provider\Doctrine\Fixtures\Entity\Standard\Blog\Author;
 use DH\Auditor\Tests\Provider\Doctrine\Traits\ReaderTrait;
 use DH\Auditor\Tests\Provider\Doctrine\Traits\Schema\BlogSchemaSetupTrait;
-use Kachnitel\AuditorBundle\Admin\AuditDataSource;
-use Kachnitel\AuditorBundle\Service\AuditReader;
 use Kachnitel\AdminBundle\DataSource\ColumnMetadata;
 use Kachnitel\AdminBundle\DataSource\DataSourceInterface;
 use Kachnitel\AdminBundle\DataSource\FilterMetadata;
 use Kachnitel\AdminBundle\DataSource\PaginatedResult;
+use Kachnitel\AuditorBundle\Admin\AuditDataSource;
+use Kachnitel\AuditorBundle\Service\AuditReader;
 use PHPUnit\Framework\Attributes\Small;
 use Symfony\Bundle\FrameworkBundle\Test\KernelTestCase;
 

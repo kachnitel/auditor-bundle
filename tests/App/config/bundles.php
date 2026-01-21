@@ -2,8 +2,8 @@
 
 declare(strict_types=1);
 
-use Kachnitel\AuditorBundle\KachnitelAuditorBundle;
 use Doctrine\Bundle\DoctrineBundle\DoctrineBundle;
+use Kachnitel\AuditorBundle\KachnitelAuditorBundle;
 use Symfony\Bundle\FrameworkBundle\FrameworkBundle;
 use Symfony\Bundle\SecurityBundle\SecurityBundle;
 use Symfony\Bundle\TwigBundle\TwigBundle;

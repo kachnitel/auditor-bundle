@@ -75,7 +75,7 @@ final class EventAuditServiceTest extends KernelTestCase
                 $this->dispatchedEvents[] = $event;
             },
             // High priority to capture before persistence
-            1000
+            1_000
         );
     }
 
@@ -225,7 +225,7 @@ final class EventAuditServiceTest extends KernelTestCase
         $this->assertArrayHasKey('transaction_hash', $payload);
         $this->assertNotEmpty($payload['transaction_hash']);
         // SHA1 hash is 40 characters
-        $this->assertSame(40, \strlen($payload['transaction_hash']));
+        $this->assertSame(40, mb_strlen($payload['transaction_hash']));
     }
 
     public function testCreateEventWithNoUser(): void

@@ -41,6 +41,7 @@ class TimelineController extends AbstractController
         // Filter parameters
         /** @var array<string> $filterEntities */
         $filterEntities = $request->query->all('entities');
+
         /** @var array<string> $filterActions */
         $filterActions = $request->query->all('actions');
 
@@ -115,24 +116,20 @@ class TimelineController extends AbstractController
 
         // Apply filters
         if ([] !== $filterEntities || [] !== $filterActions) {
-            $allEntries = array_filter($allEntries, function (array $item) use ($filterEntities, $filterActions): bool {
+            $allEntries = array_filter($allEntries, static function (array $item) use ($filterEntities, $filterActions): bool {
                 // Filter by entity type
                 if ([] !== $filterEntities && !\in_array($item['entityClass'], $filterEntities, true)) {
                     return false;
                 }
 
                 // Filter by action type
-                if ([] !== $filterActions && !\in_array($item['entry']->getType(), $filterActions, true)) {
-                    return false;
-                }
-
-                return true;
+                return !([] !== $filterActions && !\in_array($item['entry']->getType(), $filterActions, true));
             });
             $allEntries = array_values($allEntries);
         }
 
         // Sort by created_at ascending
-        usort($allEntries, function (array $a, array $b): int {
+        usort($allEntries, static function (array $a, array $b): int {
             $aTime = $a['entry']->getCreatedAt();
             $bTime = $b['entry']->getCreatedAt();
 
