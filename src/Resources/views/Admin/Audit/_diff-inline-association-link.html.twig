@@ -1,0 +1,9 @@
+{# Inline preview for association link (associate/dissociate) #}
+{# Expects: diffs #}
+{% set link = diffs|format_association_link %}
+<li class="mb-1">
+    <strong>Link:</strong>
+    <code>{{ link.source }}</code>
+    <span class="material-icons ms-1 align-middle" style="font-size: 1rem;">swap_horiz</span>
+    <code>{{ link.target }}</code>
+</li>

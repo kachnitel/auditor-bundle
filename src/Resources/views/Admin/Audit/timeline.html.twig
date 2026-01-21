@@ -226,34 +226,51 @@
                                 {% set diffs = item.entry.getDiffs() %}
                                 {% if diffs is not empty %}
                                     <div class="timeline-changes">
-                                        {% set fieldCount = 0 %}
-                                        {% set previewFields = [] %}
-                                        {% for key, value in diffs %}
-                                            {% if key not in ['@source', '@context'] %}
-                                                {% set fieldCount = fieldCount + 1 %}
-                                                {% if fieldCount <= 3 %}
-                                                    {% set previewFields = previewFields|merge([key]) %}
-                                                {% endif %}
-                                            {% endif %}
-                                        {% endfor %}
-
+                                        {% set diffType = diff_type(diffs) %}
                                         <div class="changes-summary">
-                                            {% for field in previewFields %}
-                                                {% set change = diffs[field] %}
+                                            {% if diffType == 'entity_summary' %}
+                                                {# Insert/Remove: show entity label #}
+                                                {% set summary = diffs|format_entity_summary %}
                                                 <span class="change-field">
-                                                    <strong>{{ field }}</strong>:
-                                                    {% if change.old is defined and change.new is defined %}
-                                                        <span class="text-muted">{{ change.old|json_encode|slice(0, 20) }}</span>
-                                                        <span class="mx-1">&rarr;</span>
-                                                        <span>{{ change.new|json_encode|slice(0, 20) }}</span>
-                                                    {% elseif change.removed is defined and change.added is defined %}
-                                                        <span class="text-danger">-{{ change.removed|length }}</span>
-                                                        <span class="text-success">+{{ change.added|length }}</span>
-                                                    {% endif %}
+                                                    <code>{{ summary.label ?: (summary.shortClass ~ '#' ~ summary.id) }}</code>
                                                 </span>
-                                            {% endfor %}
-                                            {% if fieldCount > 3 %}
-                                                <span class="text-muted">+{{ fieldCount - 3 }} more</span>
+                                            {% elseif diffType == 'association_link' %}
+                                                {# Associate/Dissociate: show source → target #}
+                                                {% set link = diffs|format_association_link %}
+                                                <span class="change-field">
+                                                    <code>{{ link.source }}</code>
+                                                    <span class="mx-1">&harr;</span>
+                                                    <code>{{ link.target }}</code>
+                                                </span>
+                                            {% else %}
+                                                {# Update/Association change: show field-by-field changes #}
+                                                {% set fieldCount = 0 %}
+                                                {% set previewFields = [] %}
+                                                {% for key, value in diffs %}
+                                                    {% if key not in ['@source', '@context'] and value is iterable %}
+                                                        {% set fieldCount = fieldCount + 1 %}
+                                                        {% if fieldCount <= 3 %}
+                                                            {% set previewFields = previewFields|merge([key]) %}
+                                                        {% endif %}
+                                                    {% endif %}
+                                                {% endfor %}
+                                                {% for field in previewFields %}
+                                                    {% set change = diffs[field] %}
+                                                    <span class="change-field">
+                                                        <strong>{{ field }}</strong>:
+                                                        {% if change.old is defined and change.new is defined %}
+                                                            <span class="text-muted">{{ change.old|json_encode|slice(0, 20) }}</span>
+                                                            <span class="mx-1">&rarr;</span>
+                                                            <span>{{ change.new|json_encode|slice(0, 20) }}</span>
+                                                        {% elseif change.removed is defined and change.added is defined %}
+                                                            <span class="text-danger">-{{ change.removed|length }}</span>
+                                                            <span class="text-success">+{{ change.added|length }}</span>
+                                                        {% endif %}
+                                                    </span>
+                                                {% endfor %}
+                                                {% if fieldCount > 3 %}
+                                                    <span class="text-muted">+{{ fieldCount - 3 }} more</span>
+                                                {% endif %}
                                             {% endif %}
                                         </div>
                                     </div>

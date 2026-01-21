@@ -134,6 +134,125 @@ class DiffFormatter
     }
 
     /**
+     * Detect the type of diff structure.
+     *
+     * @param array<string, mixed> $diffs The diffs from an audit entry
+     *
+     * @return string One of: 'update', 'association_change', 'entity_summary', 'association_link', 'unknown'
+     */
+    public static function detectDiffType(array $diffs): string
+    {
+        // Filter out metadata
+        $data = array_filter($diffs, static fn (string $k): bool => !str_starts_with($k, '@'), ARRAY_FILTER_USE_KEY);
+
+        if ([] === $data) {
+            return 'unknown';
+        }
+
+        // Check for entity summary (insert/remove operations)
+        if (self::isEntitySummary($data)) {
+            return 'entity_summary';
+        }
+
+        // Check for association link (associate/dissociate operations)
+        if (self::isAssociationLink($data)) {
+            return 'association_link';
+        }
+
+        // Check for field updates or association changes
+        foreach ($data as $value) {
+            if (\is_array($value)) {
+                if (\array_key_exists('old', $value) || \array_key_exists('new', $value)) {
+                    return 'update';
+                }
+                if (\array_key_exists('removed', $value) || \array_key_exists('added', $value)) {
+                    return 'association_change';
+                }
+            }
+        }
+
+        return 'unknown';
+    }
+
+    /**
+     * Check if this is an entity summary (insert/remove operations).
+     *
+     * Entity summaries have a flat structure with class, label, id, and table keys.
+     *
+     * @param array<string, mixed> $diffs The diffs from an audit entry
+     */
+    public static function isEntitySummary(array $diffs): bool
+    {
+        return isset($diffs['class']) && isset($diffs['label']);
+    }
+
+    /**
+     * Check if this is an association link (associate/dissociate operations).
+     *
+     * Association links have source, target, and is_owning_side keys.
+     *
+     * @param array<string, mixed> $diffs The diffs from an audit entry
+     */
+    public static function isAssociationLink(array $diffs): bool
+    {
+        return isset($diffs['source'])
+            && isset($diffs['target'])
+            && \array_key_exists('is_owning_side', $diffs);
+    }
+
+    /**
+     * Format entity summary for display.
+     *
+     * @param array<string, mixed> $diffs The diffs from an audit entry
+     *
+     * @return array{label: string, class: string, id: mixed, shortClass: string}
+     */
+    public static function formatEntitySummary(array $diffs): array
+    {
+        $class = isset($diffs['class']) && \is_string($diffs['class']) ? $diffs['class'] : '';
+        $parts = explode('\\', $class);
+        $shortClass = end($parts) ?: $class;
+
+        $pkName = isset($diffs['pkName']) && \is_string($diffs['pkName']) ? $diffs['pkName'] : 'id';
+
+        return [
+            'label' => isset($diffs['label']) && \is_string($diffs['label']) ? $diffs['label'] : '',
+            'class' => $class,
+            'id' => $diffs['id'] ?? $diffs[$pkName] ?? null,
+            'shortClass' => $shortClass,
+        ];
+    }
+
+    /**
+     * Format association link for display.
+     *
+     * @param array<string, mixed> $diffs The diffs from an audit entry
+     *
+     * @return array{source: string, target: string, sourceClass: string, targetClass: string}
+     */
+    public static function formatAssociationLink(array $diffs): array
+    {
+        /** @var array{label?: string, class?: string, id?: mixed} $source */
+        $source = $diffs['source'] ?? [];
+
+        /** @var array{label?: string, class?: string, id?: mixed} $target */
+        $target = $diffs['target'] ?? [];
+
+        $sourceLabel = $source['label'] ?? self::formatEntityLabel($source);
+        $targetLabel = $target['label'] ?? self::formatEntityLabel($target);
+
+        $sourceClass = $source['class'] ?? '';
+        $targetClass = $target['class'] ?? '';
+
+        return [
+            'source' => $sourceLabel,
+            'target' => $targetLabel,
+            'sourceClass' => $sourceClass,
+            'targetClass' => $targetClass,
+        ];
+    }
+
+    /**
      * Truncate a value for preview display.
      */
     private static function truncateValue(mixed $value): mixed
@@ -150,5 +269,20 @@ class DiffFormatter
         }
 
         return $value;
+    }
+
+    /**
+     * Format an entity label from its class and id.
+     *
+     * @param array{class?: string, id?: mixed} $entity
+     */
+    private static function formatEntityLabel(array $entity): string
+    {
+        $class = $entity['class'] ?? '';
+        $parts = explode('\\', $class);
+        $shortClass = end($parts) ?: $class;
+        $id = $entity['id'] ?? '?';
+
+        return $shortClass.'#'.$id;
     }
 }

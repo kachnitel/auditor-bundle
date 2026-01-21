@@ -1,0 +1,15 @@
+{# Modal content for entity summary (insert/remove) #}
+{# Expects: diffs #}
+{% set summary = diffs|format_entity_summary %}
+<dl class="row mb-0">
+    <dt class="col-sm-3">Entity</dt>
+    <dd class="col-sm-9"><code>{{ summary.shortClass }}</code></dd>
+    <dt class="col-sm-3">ID</dt>
+    <dd class="col-sm-9"><code>{{ summary.id }}</code></dd>
+    <dt class="col-sm-3">Label</dt>
+    <dd class="col-sm-9">{{ summary.label ?: 'N/A' }}</dd>
+    {% if diffs.table is defined %}
+        <dt class="col-sm-3">Table</dt>
+        <dd class="col-sm-9"><code>{{ diffs.table }}</code></dd>
+    {% endif %}
+</dl>

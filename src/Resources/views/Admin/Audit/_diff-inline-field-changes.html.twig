@@ -1,0 +1,37 @@
+{# Inline preview for field changes (update/association_change) #}
+{# Expects: diffs #}
+{% for key, value in diffs %}
+    {% if key not in ['@source', '@context'] and value is iterable %}
+        <li class="mb-1">
+            {% if value.old is defined and value.new is defined %}
+                {# Field update #}
+                <strong>{{ key }}:</strong>
+                <span class="badge bg-secondary">
+                    {{ value.old|json_encode|slice(0, 20) }}
+                </span>
+                {# Numeric comparison arrows #}
+                {% set oldJson = value.old|json_encode %}
+                {% set newJson = value.new|json_encode %}
+                {% if oldJson matches '/^-?\\d+(\\.\\d+)?$/' and newJson matches '/^-?\\d+(\\.\\d+)?$/' %}
+                    {% if value.old < value.new %}
+                        <span class="material-icons ms-1 align-middle text-success" style="font-size: 1rem;">north_east</span>
+                    {% elseif value.old > value.new %}
+                        <span class="material-icons ms-1 align-middle text-danger" style="font-size: 1rem;">south_east</span>
+                    {% else %}
+                        <span class="material-icons ms-1 align-middle" style="font-size: 1rem;">east</span>
+                    {% endif %}
+                {% else %}
+                    <span class="material-icons ms-1 align-middle" style="font-size: 1rem;">east</span>
+                {% endif %}
+                <span class="badge bg-secondary ms-1">
+                    {{ value.new|json_encode|slice(0, 20) }}
+                </span>
+            {% elseif value.removed is defined and value.added is defined %}
+                {# Association change #}
+                <strong>{{ key }}:</strong>
+                <span class="badge bg-danger">- {{ value.removed|length }}</span>
+                <span class="badge bg-success ms-1">+ {{ value.added|length }}</span>
+            {% endif %}
+        </li>
+    {% endif %}
+{% endfor %}

@@ -128,3 +128,8 @@ services:
 
   # Note: TimelineController and AuditorRouteLoader are registered conditionally
   # via AdminBundleIntegrationPass when kachnitel/admin-bundle is installed
+
+  # Twig extension for diff formatting
+  Kachnitel\AuditorBundle\Twig\DiffFormatterExtension:
+    tags:
+      - { name: twig.extension }
