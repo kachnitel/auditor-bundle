@@ -129,12 +129,15 @@ class AuditDataSource implements DataSourceInterface
             return $this->queryByUserSearch($filters['blame_user'], $filters, $page, $itemsPerPage);
         }
 
-        // Check if we need in-memory filtering for system events
+        // Special case: hide_system filter uses database-level filtering via AuditReader
         $hideSystem = !empty($filters['hide_system']) && ('1' === $filters['hide_system'] || true === $filters['hide_system']);
+        if ($hideSystem) {
+            return $this->queryExcludingSystemEvents($filters, $search, $sortBy, $sortDirection, $page, $itemsPerPage);
+        }
 
+        // Standard query path
         $query = $this->reader->createQuery($this->entityClass);
 
-        // Apply filters (excluding hide_system which is handled in-memory)
         $this->applyFilters($query, $filters, $search);
 
         // Apply sorting
@@ -144,35 +147,6 @@ class AuditDataSource implements DataSourceInterface
         } else {
             $query->addOrderBy('created_at', 'DESC');
         }
-
-        // When filtering system events, we need to fetch all and filter in memory
-        if ($hideSystem) {
-            // Fetch all entries (no pagination at query level)
-            $entries = $query->execute();
-
-            // Filter out system events (entries without username)
-            $entries = array_filter($entries, static fn (Entry $entry) => null !== $entry->getUsername());
-            $entries = array_values($entries);
-            $total = \count($entries);
-
-            // Apply pagination in memory
-            $page = max(1, $page);
-            $totalPages = $total > 0 ? (int) ceil($total / $itemsPerPage) : 0;
-            if ($totalPages > 0 && $page > $totalPages) {
-                $page = $totalPages;
-            }
-            $offset = ($page - 1) * $itemsPerPage;
-            $entries = \array_slice($entries, $offset, $itemsPerPage);
-
-            return new PaginatedResult(
-                items: $entries,
-                totalItems: $total,
-                currentPage: $page,
-                itemsPerPage: $itemsPerPage,
-            );
-        }
-
-        // Standard query path with database pagination
         $total = $query->count();
 
         // Clamp page to valid range
@@ -401,6 +375,83 @@ class AuditDataSource implements DataSourceInterface
         // Apply pagination manually
         $offset = ($page - 1) * $itemsPerPage;
         $entries = \array_slice($entries, $offset, $itemsPerPage);
+
+        return new PaginatedResult(
+            items: $entries,
+            totalItems: $total,
+            currentPage: $page,
+            itemsPerPage: $itemsPerPage,
+        );
+    }
+
+    /**
+     * Query audit entries excluding system events using database-level filtering.
+     *
+     * This method is scalable for large datasets (millions of entries) as it filters
+     * at the SQL level instead of loading all entries into memory.
+     *
+     * @param array<string, mixed> $filters Additional filters to apply
+     */
+    private function queryExcludingSystemEvents(
+        array $filters,
+        string $search,
+        string $sortBy,
+        string $sortDirection,
+        int $page,
+        int $itemsPerPage
+    ): PaginatedResult {
+        \assert(null !== $this->auditReader);
+
+        // Build additional filters for the query
+        $additionalFilters = [];
+
+        if (!empty($filters['object_id'])) {
+            $additionalFilters['object_id'] = $filters['object_id'];
+        }
+
+        if (!empty($filters['type'])) {
+            $additionalFilters['type'] = $filters['type'];
+        }
+
+        if (!empty($filters['created_at'])) {
+            $dateFilter = $filters['created_at'];
+            // Handle JSON string format from URL
+            if (\is_string($dateFilter)) {
+                $decoded = json_decode($dateFilter, true);
+                $dateFilter = \is_array($decoded) ? $decoded : null;
+            }
+            if (\is_array($dateFilter)) {
+                $additionalFilters['created_at'] = $dateFilter;
+            }
+        }
+
+        if (!empty($filters['transaction_hash'])) {
+            $additionalFilters['transaction_hash'] = $filters['transaction_hash'];
+        }
+
+        // Global search maps to object_id
+        if (!empty($search)) {
+            $additionalFilters['object_id'] = $search;
+        }
+
+        $result = $this->auditReader->findEntityAuditsExcludingSystemEvents(
+            $this->entityClass,
+            $additionalFilters,
+            $sortBy,
+            $sortDirection,
+            $page,
+            $itemsPerPage
+        );
+
+        $total = $result['total'];
+        $entries = $result['entries'];
+
+        // Clamp page to valid range
+        $page = max(1, $page);
+        $totalPages = $total > 0 ? (int) ceil($total / $itemsPerPage) : 0;
+        if ($totalPages > 0 && $page > $totalPages) {
+            $page = $totalPages;
+        }
 
         return new PaginatedResult(
             items: $entries,

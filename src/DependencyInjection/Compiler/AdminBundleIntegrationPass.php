@@ -4,7 +4,9 @@ declare(strict_types=1);
 
 namespace Kachnitel\AuditorBundle\DependencyInjection\Compiler;
 
+use Kachnitel\AdminBundle\DataSource\DataSourceRegistry;
 use Kachnitel\AuditorBundle\Admin\AuditDataSourceFactory;
+use Kachnitel\AuditorBundle\Controller\AuditIndexController;
 use Kachnitel\AuditorBundle\Controller\TimelineController;
 use Kachnitel\AuditorBundle\Routing\AuditorRouteLoader;
 use Kachnitel\AuditorBundle\Service\AuditReader;
@@ -19,6 +21,7 @@ use Symfony\Component\DependencyInjection\Reference;
  * This compiler pass checks if kachnitel/admin-bundle is available and,
  * if so, registers:
  * - AuditDataSourceFactory as a data source provider
+ * - AuditIndexController for audit data source views with "Hide System Events" toggle
  * - TimelineController for cross-entity audit timeline view
  * - AuditorRouteLoader for automatic route registration
  */
@@ -39,6 +42,11 @@ class AdminBundleIntegrationPass implements CompilerPassInterface
         $this->registerDataSourceFactory($container);
         $this->registerTimelineController($container);
         $this->registerRouteLoader($container);
+
+        // AuditIndexController requires DataSourceRegistry service which may not be available
+        if ($container->has(DataSourceRegistry::class)) {
+            $this->registerAuditIndexController($container);
+        }
     }
 
     private function registerDataSourceFactory(ContainerBuilder $container): void
@@ -55,6 +63,20 @@ class AdminBundleIntegrationPass implements CompilerPassInterface
 
         $container->setDefinition(AuditDataSourceFactory::class, $factoryDefinition);
         $container->setAlias('kachnitel_auditor.admin.data_source_factory', AuditDataSourceFactory::class);
+    }
+
+    private function registerAuditIndexController(ContainerBuilder $container): void
+    {
+        // Register AuditIndexController for audit data source views with "Hide System Events" toggle
+        $controllerDefinition = new Definition(AuditIndexController::class);
+        $controllerDefinition->setArgument(0, new Reference(DataSourceRegistry::class));
+        $controllerDefinition->addTag('controller.service_arguments');
+        $controllerDefinition->addTag('container.service_subscriber');
+        $controllerDefinition->setAutowired(true);
+        $controllerDefinition->setAutoconfigured(true);
+        $controllerDefinition->setPublic(true);
+
+        $container->setDefinition(AuditIndexController::class, $controllerDefinition);
     }
 
     private function registerTimelineController(ContainerBuilder $container): void

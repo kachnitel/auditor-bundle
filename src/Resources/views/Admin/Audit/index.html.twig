@@ -1,0 +1,43 @@
+{#
+ # Audit DataSource list template with "Hide System Events" toggle.
+ # Overrides the default datasource_index to add a prominent toggle button.
+ #
+ # Variables:
+ # @var string dataSourceId - Identifier of the data source
+ # @var DataSourceInterface dataSource - The data source instance
+ #}
+{% extends kachnitel_admin_base_layout ?: '@KachnitelAdmin/admin/base.html.twig' %}
+
+{% block headerTitle %}
+    {{ dataSource.label }}
+{% endblock %}
+
+{% block headerButtons %}
+    {# "Hide System Events" toggle button #}
+    {% set hideSystem = app.request.query.all('columnFilters')['hide_system'] ?? '0' %}
+    {% set currentFilters = app.request.query.all('columnFilters') %}
+
+    {% if hideSystem == '1' %}
+        {# Currently hiding system events - show button to show them #}
+        {% set newFilters = currentFilters|filter((v, k) => k != 'hide_system') %}
+        <a href="?{{ {'columnFilters': newFilters}|url_encode }}" class="btn btn-warning btn-sm">
+            <span class="material-icons align-middle me-1" style="font-size: 1.1rem;">person</span>
+            User Events Only
+        </a>
+    {% else %}
+        {# Currently showing all events - show button to hide system #}
+        {% set newFilters = currentFilters|merge({'hide_system': '1'}) %}
+        <a href="?{{ {'columnFilters': newFilters}|url_encode }}" class="btn btn-outline-secondary btn-sm">
+            <span class="material-icons align-middle me-1" style="font-size: 1.1rem;">visibility_off</span>
+            Hide System Events
+        </a>
+    {% endif %}
+{% endblock %}
+
+{% block content %}
+    {% component 'K:Admin:EntityList' with {
+        dataSourceId: dataSourceId
+    } %}
+        {# Override blocks from component template as needed #}
+    {% endcomponent %}
+{% endblock %}
