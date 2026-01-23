@@ -22,9 +22,18 @@
     </ul>
 
     {# Show data button and modal #}
-    <button type="button" class="btn btn-light btn-sm float-end" data-bs-toggle="modal" data-bs-target="#auditModal{{ entryId }}">
-        Show data
-    </button>
+    {% set context = diffsWithMeta['@context']|default({}) %}
+    {% set hasContextNote = context.note is defined or context.reason is defined %}
+    <div class="float-end">
+        {% if hasContextNote %}
+            <span class="badge bg-light text-dark me-1" title="{{ context.note|default(context.reason) }}">
+                <span class="material-icons align-middle" style="font-size: 1rem;">notes</span>
+            </span>
+        {% endif %}
+        <button type="button" class="btn btn-light btn-sm" data-bs-toggle="modal" data-bs-target="#auditModal{{ entryId }}">
+            Show data
+        </button>
+    </div>
 
     <div class="modal fade" id="auditModal{{ entryId }}" tabindex="-1">
         <div class="modal-dialog modal-lg">
@@ -34,6 +43,29 @@
                     <button type="button" class="btn-close" data-bs-dismiss="modal" aria-label="Close"></button>
                 </div>
                 <div class="modal-body">
+                    {% set context = diffsWithMeta['@context']|default({}) %}
+                    {% set contextFields = context|filter((v, k) => k != 'request_id') %}
+                    {% if contextFields is not empty %}
+                        <div class="alert alert-light border mb-3">
+                            {% if context.note is defined %}
+                                <div class="mb-2">
+                                    <strong>Note:</strong> {{ context.note }}
+                                </div>
+                            {% endif %}
+                            {% if context.reason is defined %}
+                                <div class="mb-2">
+                                    <strong>Reason:</strong> <span class="badge bg-info">{{ context.reason }}</span>
+                                </div>
+                            {% endif %}
+                            {% for key, value in contextFields %}
+                                {% if key not in ['note', 'reason'] %}
+                                    <div class="mb-1">
+                                        <strong>{{ key }}:</strong> <code>{{ value is iterable ? value|json_encode : value }}</code>
+                                    </div>
+                                {% endif %}
+                            {% endfor %}
+                        </div>
+                    {% endif %}
                     {% if diffType == 'entity_summary' %}
                         <twig:K:Audit:DiffModalEntitySummary :diffs="diffs" />
                     {% elseif diffType == 'association_link' %}

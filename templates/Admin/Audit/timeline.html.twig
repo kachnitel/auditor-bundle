@@ -224,8 +224,20 @@
 
                                 {# Changes preview #}
                                 {% set diffs = item.entry.getDiffs() %}
+                                {% set diffsWithMeta = item.entry.getDiffs(true) %}
+                                {% set context = diffsWithMeta['@context']|default({}) %}
                                 {% if diffs is not empty %}
                                     <div class="timeline-changes">
+                                        {% if context.note is defined or context.reason is defined %}
+                                            <div class="mb-2">
+                                                {% if context.reason is defined %}
+                                                    <span class="badge bg-info me-1">{{ context.reason }}</span>
+                                                {% endif %}
+                                                {% if context.note is defined %}
+                                                    <span class="fst-italic text-muted">{{ context.note }}</span>
+                                                {% endif %}
+                                            </div>
+                                        {% endif %}
                                         {% set diffType = diff_type(diffs) %}
                                         <div class="changes-summary">
                                             {% if diffType == 'entity_summary' %}

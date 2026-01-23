@@ -98,6 +98,41 @@
                     </div>
                 </div>
             {% endif %}
+            {% set context = diffsWithMeta['@context']|default({}) %}
+            {% if context.note is defined %}
+                <div class="row">
+                    <div class="col-md-12">
+                        <h6 class="text-muted">Note</h6>
+                        <p>{{ context.note }}</p>
+                    </div>
+                </div>
+            {% endif %}
+            {% if context.reason is defined %}
+                <div class="row">
+                    <div class="col-md-6">
+                        <h6 class="text-muted">Reason</h6>
+                        <p><span class="badge bg-info">{{ context.reason }}</span></p>
+                    </div>
+                    {% set customFields = context|filter((v, k) => k not in ['request_id', 'note', 'reason']) %}
+                    {% if customFields is not empty %}
+                        <div class="col-md-6">
+                            <h6 class="text-muted">Additional Context</h6>
+                            {% for key, value in customFields %}
+                                <p class="mb-1"><strong>{{ key }}:</strong> <code>{{ value is iterable ? value|json_encode : value }}</code></p>
+                            {% endfor %}
+                        </div>
+                    {% endif %}
+                </div>
+            {% elseif context|filter((v, k) => k not in ['request_id', 'note', 'reason']) is not empty %}
+                <div class="row">
+                    <div class="col-md-12">
+                        <h6 class="text-muted">Additional Context</h6>
+                        {% for key, value in context|filter((v, k) => k not in ['request_id', 'note', 'reason']) %}
+                            <p class="mb-1"><strong>{{ key }}:</strong> <code>{{ value is iterable ? value|json_encode : value }}</code></p>
+                        {% endfor %}
+                    </div>
+                </div>
+            {% endif %}
             {% if hasTimelineSupport and entry.getUsername() and entry.getCreatedAt() %}
                 <div class="row">
                     <div class="col-md-12">
