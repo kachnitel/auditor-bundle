@@ -104,6 +104,22 @@ final class AuditDataSourceFactoryTest extends KernelTestCase
         $this->assertNull($result);
     }
 
+    public function testGetHandlesItemIdentifierWithSlash(): void
+    {
+        // Populate cache first
+        $this->factory->createAll();
+
+        // Test with item ID appended (e.g., "datasource-id/item-id")
+        $dataSourceId = 'audit-DH-Auditor-Tests-Provider-Doctrine-Fixtures-Entity-Standard-Blog-Author';
+        $itemIdentifier = $dataSourceId.'/12345';
+
+        $dataSource = $this->factory->get($itemIdentifier);
+
+        $this->assertInstanceOf(AuditDataSource::class, $dataSource);
+        $this->assertSame(Author::class, $dataSource->getEntityClass());
+        $this->assertSame($dataSourceId, $dataSource->getIdentifier());
+    }
+
     public function testGetReturnsCachedDataSource(): void
     {
         // First call populates cache

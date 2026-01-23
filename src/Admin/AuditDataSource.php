@@ -13,6 +13,7 @@ use Kachnitel\AdminBundle\DataSource\ColumnMetadata;
 use Kachnitel\AdminBundle\DataSource\DataSourceInterface;
 use Kachnitel\AdminBundle\DataSource\FilterMetadata;
 use Kachnitel\AdminBundle\DataSource\PaginatedResult;
+use Kachnitel\AuditorBundle\Enum\AuditActionType;
 use Kachnitel\AuditorBundle\Helper\DiffFormatter;
 use Kachnitel\AuditorBundle\Helper\UrlHelper;
 use Kachnitel\AuditorBundle\Service\AuditReader;
@@ -64,14 +65,14 @@ class AuditDataSource implements DataSourceInterface
                 label: 'Changes',
                 type: 'json',
                 sortable: false,
-                template: '@KachnitelAuditor/Admin/Audit/_changes-preview.html.twig',
+                template: '@KachnitelAuditor/components/Audit/ChangesPreview.html.twig',
             ),
             'actions' => new ColumnMetadata(
                 name: 'actions',
                 label: '',
                 type: 'actions',
                 sortable: false,
-                template: '@KachnitelAuditor/Admin/Audit/_row-actions.html.twig',
+                template: '@KachnitelAuditor/components/Audit/RowActions.html.twig',
             ),
         ];
     }
@@ -79,15 +80,8 @@ class AuditDataSource implements DataSourceInterface
     public function getFilters(): array
     {
         return [
-            'object_id' => FilterMetadata::text('object_id', 'Entity ID', 'Search by ID...', 1),
-            'type' => FilterMetadata::enum('type', [
-                'insert',
-                'update',
-                'remove',
-                'associate',
-                'dissociate',
-                'event',
-            ], 'Action', true, 2),
+            'object_id' => FilterMetadata::text('object_id', 'Entity ID', 'Search by ID (use * for wildcard)...', 1),
+            'type' => FilterMetadata::enumClass('type', AuditActionType::class, 'Action', true, 2),
             'created_at' => FilterMetadata::dateRange('created_at', 'Date', 3),
             'blame_user' => FilterMetadata::text('blame_user', 'User', 'Search user...', 4),
             'hide_system' => FilterMetadata::boolean('hide_system', 'Hide System Events', false, 5),
@@ -133,6 +127,11 @@ class AuditDataSource implements DataSourceInterface
         $hideSystem = !empty($filters['hide_system']) && ('1' === $filters['hide_system'] || true === $filters['hide_system']);
         if ($hideSystem) {
             return $this->queryExcludingSystemEvents($filters, $search, $sortBy, $sortDirection, $page, $itemsPerPage);
+        }
+
+        // Special case: object_id filter with wildcard (*) uses LIKE search via AuditReader
+        if (!empty($filters['object_id']) && \is_string($filters['object_id']) && str_contains($filters['object_id'], '*') && null !== $this->auditReader) {
+            return $this->queryByObjectIdSearch($filters['object_id'], $filters, $sortBy, $sortDirection, $page, $itemsPerPage);
         }
 
         // Standard query path
@@ -436,6 +435,80 @@ class AuditDataSource implements DataSourceInterface
 
         $result = $this->auditReader->findEntityAuditsExcludingSystemEvents(
             $this->entityClass,
+            $additionalFilters,
+            $sortBy,
+            $sortDirection,
+            $page,
+            $itemsPerPage
+        );
+
+        $total = $result['total'];
+        $entries = $result['entries'];
+
+        // Clamp page to valid range
+        $page = max(1, $page);
+        $totalPages = $total > 0 ? (int) ceil($total / $itemsPerPage) : 0;
+        if ($totalPages > 0 && $page > $totalPages) {
+            $page = $totalPages;
+        }
+
+        return new PaginatedResult(
+            items: $entries,
+            totalItems: $total,
+            currentPage: $page,
+            itemsPerPage: $itemsPerPage,
+        );
+    }
+
+    /**
+     * Query audit entries by object_id search with wildcard support.
+     *
+     * Uses SQL LIKE query with '*' converted to '%' for pattern matching.
+     *
+     * @param array<string, mixed> $filters Additional filters to apply
+     */
+    private function queryByObjectIdSearch(
+        string $objectIdPattern,
+        array $filters,
+        string $sortBy,
+        string $sortDirection,
+        int $page,
+        int $itemsPerPage
+    ): PaginatedResult {
+        \assert(null !== $this->auditReader);
+
+        // Build additional filters for the query
+        $additionalFilters = [];
+
+        if (!empty($filters['type'])) {
+            $additionalFilters['type'] = $filters['type'];
+        }
+
+        if (!empty($filters['created_at'])) {
+            $dateFilter = $filters['created_at'];
+            // Handle JSON string format from URL
+            if (\is_string($dateFilter)) {
+                $decoded = json_decode($dateFilter, true);
+                $dateFilter = \is_array($decoded) ? $decoded : null;
+            }
+            if (\is_array($dateFilter)) {
+                $additionalFilters['created_at'] = $dateFilter;
+            }
+        }
+
+        if (!empty($filters['transaction_hash'])) {
+            $additionalFilters['transaction_hash'] = $filters['transaction_hash'];
+        }
+
+        // Pass hide_system filter if active
+        $hideSystem = !empty($filters['hide_system']) && ('1' === $filters['hide_system'] || true === $filters['hide_system']);
+        if ($hideSystem) {
+            $additionalFilters['hide_system'] = true;
+        }
+
+        $result = $this->auditReader->findEntityAuditsByObjectIdSearch(
+            $this->entityClass,
+            $objectIdPattern,
             $additionalFilters,
             $sortBy,
             $sortDirection,

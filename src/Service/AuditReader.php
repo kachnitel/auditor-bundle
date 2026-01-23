@@ -213,6 +213,131 @@ class AuditReader
     }
 
     /**
+     * Find audit entries for a specific entity by object_id search (SQL LIKE pattern with wildcards).
+     *
+     * Supports wildcard patterns using '*':
+     * - 'abc*' matches IDs starting with 'abc'
+     * - '*abc' matches IDs ending with 'abc'
+     * - '*abc*' matches IDs containing 'abc'
+     * - 'abc' (no wildcard) uses exact match for backwards compatibility
+     *
+     * @param array<string, mixed> $additionalFilters Optional filters (type, created_at, transaction_hash)
+     *
+     * @return array{entries: array<Entry>, total: int}
+     */
+    public function findEntityAuditsByObjectIdSearch(
+        string $entityClass,
+        string $searchPattern,
+        array $additionalFilters = [],
+        string $sortBy = 'created_at',
+        string $sortDirection = 'DESC',
+        int $page = 1,
+        int $itemsPerPage = 50
+    ): array {
+        $provider = $this->reader->getProvider();
+        $tableName = $this->reader->getEntityAuditTableName($entityClass);
+
+        $storageService = $provider->getStorageServiceForEntity($entityClass);
+        $connection = $storageService->getEntityManager()->getConnection();
+
+        $timezone = new \DateTimeZone(
+            $provider->getAuditor()->getConfiguration()->getTimezone()
+        );
+
+        // Build WHERE clause
+        $whereConditions = [];
+        $params = [];
+
+        // Convert user wildcards (*) to SQL LIKE pattern (%)
+        // First escape SQL LIKE special characters, then convert user wildcards
+        $escapedPattern = str_replace(['%', '_'], ['\%', '\_'], $searchPattern);
+        $likePattern = str_replace('*', '%', $escapedPattern);
+
+        // If no wildcards, use exact match
+        if (!str_contains($searchPattern, '*')) {
+            $whereConditions[] = 'object_id = ?';
+            $params[] = $searchPattern;
+        } else {
+            $whereConditions[] = 'object_id LIKE ?';
+            $params[] = $likePattern;
+        }
+
+        // Apply additional filters
+        if (!empty($additionalFilters['type'])) {
+            $types = \is_array($additionalFilters['type']) ? $additionalFilters['type'] : [$additionalFilters['type']];
+            $placeholders = implode(', ', array_fill(0, \count($types), '?'));
+            $whereConditions[] = "type IN ({$placeholders})";
+            $params = array_merge($params, $types);
+        }
+
+        if (!empty($additionalFilters['created_at']) && \is_array($additionalFilters['created_at'])) {
+            $dateFilter = $additionalFilters['created_at'];
+            if (!empty($dateFilter['from'])) {
+                $from = str_contains($dateFilter['from'], ':')
+                    ? $dateFilter['from']
+                    : $dateFilter['from'].' 00:00:00';
+                $whereConditions[] = 'created_at >= ?';
+                $params[] = $from;
+            }
+            if (!empty($dateFilter['to'])) {
+                $to = str_contains($dateFilter['to'], ':')
+                    ? $dateFilter['to']
+                    : $dateFilter['to'].' 23:59:59';
+                $whereConditions[] = 'created_at <= ?';
+                $params[] = $to;
+            }
+        }
+
+        if (!empty($additionalFilters['transaction_hash'])) {
+            $whereConditions[] = 'transaction_hash = ?';
+            $params[] = $additionalFilters['transaction_hash'];
+        }
+
+        // Handle hide_system filter
+        if (!empty($additionalFilters['hide_system'])) {
+            $whereConditions[] = "(blame_id IS NULL OR blame_id != 'command')";
+            $whereConditions[] = "((blame_id IS NOT NULL AND blame_id != '') OR (blame_user IS NOT NULL AND blame_user != ''))";
+        }
+
+        $whereClause = implode(' AND ', $whereConditions);
+
+        // Validate sort field
+        $validSortFields = ['id', 'object_id', 'type', 'created_at'];
+        if (!\in_array($sortBy, $validSortFields, true)) {
+            $sortBy = 'created_at';
+        }
+        $sortDirection = 'ASC' === mb_strtoupper($sortDirection) ? 'ASC' : 'DESC';
+
+        // Get total count
+        $countSql = \sprintf('SELECT COUNT(*) FROM %s WHERE %s', $tableName, $whereClause);
+        $countResult = $connection->executeQuery($countSql, $params)->fetchOne();
+        $total = is_numeric($countResult) ? (int) $countResult : 0;
+
+        // Get paginated results
+        $offset = ($page - 1) * $itemsPerPage;
+        $sql = \sprintf(
+            'SELECT * FROM %s WHERE %s ORDER BY %s %s LIMIT %d OFFSET %d',
+            $tableName,
+            $whereClause,
+            $sortBy,
+            $sortDirection,
+            $itemsPerPage,
+            $offset
+        );
+
+        $result = $connection->executeQuery($sql, $params);
+
+        $entries = [];
+        foreach ($result->fetchAllAssociative() as $row) {
+            \assert(\is_string($row['created_at']));
+            $row['created_at'] = new \DateTimeImmutable($row['created_at'], $timezone);
+            $entries[] = Entry::fromArray($row);
+        }
+
+        return ['entries' => $entries, 'total' => $total];
+    }
+
+    /**
      * Find audit entries across all entities by username within a time range.
      *
      * This creates a cross-entity "timeline" view showing all changes made by a user

@@ -55,7 +55,7 @@
                     <div class="col-md-4">
                         {# System events toggle - prominent placement #}
                         <div class="d-flex align-items-center justify-content-md-center">
-                            <a href="{{ path('dh_auditor_timeline', {
+                            <a href="{{ path('kachnitel_auditor_timeline', {
                                 user: user,
                                 from: from|date('Y-m-d H:i:s'),
                                 to: to|date('Y-m-d H:i:s'),
@@ -99,7 +99,7 @@
             </div>
             <div class="collapse {{ filterEntities|length > 0 or filterActions|length > 0 ? 'show' : '' }}" id="filtersCollapse">
                 <div class="card-body">
-                    <form method="get" action="{{ path('dh_auditor_timeline') }}">
+                    <form method="get" action="{{ path('kachnitel_auditor_timeline') }}">
                         {# Preserve required parameters #}
                         <input type="hidden" name="user" value="{{ user }}">
                         <input type="hidden" name="from" value="{{ from|date('Y-m-d H:i:s') }}">
@@ -158,7 +158,7 @@
                                 <span class="material-icons align-middle me-1" style="font-size: 1rem;">filter_alt</span>
                                 Apply Filters
                             </button>
-                            <a href="{{ path('dh_auditor_timeline', {
+                            <a href="{{ path('kachnitel_auditor_timeline', {
                                 user: user,
                                 from: from|date('Y-m-d H:i:s'),
                                 to: to|date('Y-m-d H:i:s'),

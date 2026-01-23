@@ -84,13 +84,29 @@ class AuditDataSourceFactory implements DataSourceProviderInterface
 
     /**
      * Get a data source by identifier.
+     *
+     * Handles both data source identifiers and full item identifiers (e.g., "audit-App-Entity-Order/123").
      */
     public function get(string $identifier): ?AuditDataSource
     {
         // Ensure cache is populated
         $this->createAll();
 
-        return $this->dataSourcesCache[$identifier] ?? null;
+        // First try exact match
+        if (isset($this->dataSourcesCache[$identifier])) {
+            return $this->dataSourcesCache[$identifier];
+        }
+
+        // If the identifier includes an item ID (format: "datasource-id/item-id"),
+        // extract the data source part and look it up
+        if (str_contains($identifier, '/')) {
+            $dataSourceId = explode('/', $identifier, 2)[0];
+            if (isset($this->dataSourcesCache[$dataSourceId])) {
+                return $this->dataSourcesCache[$dataSourceId];
+            }
+        }
+
+        return null;
     }
 
     /**

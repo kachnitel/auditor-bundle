@@ -657,6 +657,139 @@ final class AuditReaderTest extends KernelTestCase
         $this->assertSame('context-test-request-id', $diffs['@context']['request_id']);
     }
 
+    // =========================================================================
+    // findEntityAuditsByObjectIdSearch tests
+    // =========================================================================
+
+    public function testFindEntityAuditsByObjectIdSearchWithStartsWithPattern(): void
+    {
+        // Create authors - IDs will be 1, 2, 3
+        $this->createAuthor('Author 1', 'author1@example.com');
+        $this->createAuthor('Author 2', 'author2@example.com');
+        $this->createAuthor('Author 3', 'author3@example.com');
+
+        // Search with starts-with pattern "1*"
+        $result = $this->auditReader->findEntityAuditsByObjectIdSearch(Author::class, '1*');
+
+        $this->assertGreaterThanOrEqual(1, $result['total']);
+        foreach ($result['entries'] as $entry) {
+            $this->assertStringStartsWith('1', $entry->getObjectId() ?? '');
+        }
+    }
+
+    public function testFindEntityAuditsByObjectIdSearchWithContainsPattern(): void
+    {
+        // Create authors
+        $this->createAuthor('Author 1', 'author1@example.com');
+        $this->createAuthor('Author 2', 'author2@example.com');
+
+        // Search with contains pattern "*" (matches everything)
+        $result = $this->auditReader->findEntityAuditsByObjectIdSearch(Author::class, '*');
+
+        $this->assertSame(2, $result['total']);
+        $this->assertCount(2, $result['entries']);
+    }
+
+    public function testFindEntityAuditsByObjectIdSearchWithExactMatch(): void
+    {
+        $author1 = $this->createAuthor('Author 1', 'author1@example.com');
+        $this->createAuthor('Author 2', 'author2@example.com');
+
+        // Search without wildcard - should use exact match
+        $result = $this->auditReader->findEntityAuditsByObjectIdSearch(
+            Author::class,
+            (string) $author1->getId()
+        );
+
+        $this->assertSame(1, $result['total']);
+        $this->assertCount(1, $result['entries']);
+        $this->assertSame((string) $author1->getId(), $result['entries'][0]->getObjectId());
+    }
+
+    public function testFindEntityAuditsByObjectIdSearchWithTypeFilter(): void
+    {
+        // Create and then update an author
+        $author = $this->createAuthor('Test Author', 'test@example.com');
+
+        $auditingService = $this->provider->getAuditingServiceForEntity(Author::class);
+        $em = $auditingService->getEntityManager();
+        $author->setFullname('Updated Author');
+        $em->flush();
+        $this->flushAll([Author::class => $auditingService]);
+
+        // Search with wildcard + type filter
+        $insertResult = $this->auditReader->findEntityAuditsByObjectIdSearch(
+            Author::class,
+            '*',
+            ['type' => 'insert']
+        );
+        $this->assertSame(1, $insertResult['total']);
+        $this->assertSame('insert', $insertResult['entries'][0]->getType());
+
+        $updateResult = $this->auditReader->findEntityAuditsByObjectIdSearch(
+            Author::class,
+            '*',
+            ['type' => 'update']
+        );
+        $this->assertSame(1, $updateResult['total']);
+        $this->assertSame('update', $updateResult['entries'][0]->getType());
+    }
+
+    public function testFindEntityAuditsByObjectIdSearchPagination(): void
+    {
+        // Create 5 authors
+        for ($i = 1; $i <= 5; ++$i) {
+            $this->createAuthor("Author {$i}", "author{$i}@example.com");
+        }
+
+        // Get first page with 2 items
+        $page1 = $this->auditReader->findEntityAuditsByObjectIdSearch(
+            Author::class,
+            '*',
+            [],
+            'id',
+            'ASC',
+            1,
+            2
+        );
+
+        $this->assertSame(5, $page1['total']);
+        $this->assertCount(2, $page1['entries']);
+
+        // Get second page
+        $page2 = $this->auditReader->findEntityAuditsByObjectIdSearch(
+            Author::class,
+            '*',
+            [],
+            'id',
+            'ASC',
+            2,
+            2
+        );
+
+        $this->assertSame(5, $page2['total']);
+        $this->assertCount(2, $page2['entries']);
+
+        // Ensure pages have different entries
+        $this->assertNotSame(
+            $page1['entries'][0]->getId(),
+            $page2['entries'][0]->getId()
+        );
+    }
+
+    public function testFindEntityAuditsByObjectIdSearchEscapesSqlSpecialChars(): void
+    {
+        // Create an author
+        $this->createAuthor('Test Author', 'test@example.com');
+
+        // Search with pattern containing SQL special chars (should be escaped)
+        // Searching for literal "%" or "_" should not match anything
+        $result = $this->auditReader->findEntityAuditsByObjectIdSearch(Author::class, '%');
+
+        // "%" without asterisk is treated as exact match, should find nothing
+        $this->assertSame(0, $result['total']);
+    }
+
     /**
      * Drop all tables in the test database.
      */

@@ -4,10 +4,10 @@
 # The AuditorRouteLoader is registered via AdminBundleIntegrationPass compiler pass.
 #
 # To manually import (if auto-registration doesn't work), add to config/routes.yaml:
-#   dh_auditor:
+#   kachnitel_auditor:
 #       resource: .
-#       type: dh_auditor
+#       type: kachnitel_auditor
 
-dh_auditor:
+kachnitel_auditor:
     resource: .
-    type: dh_auditor
+    type: kachnitel_auditor

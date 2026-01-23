@@ -7,11 +7,13 @@ use Kachnitel\AuditorBundle\KachnitelAuditorBundle;
 use Symfony\Bundle\FrameworkBundle\FrameworkBundle;
 use Symfony\Bundle\SecurityBundle\SecurityBundle;
 use Symfony\Bundle\TwigBundle\TwigBundle;
+use Symfony\UX\TwigComponent\TwigComponentBundle;
 
 $bundles = [
     FrameworkBundle::class => ['all' => true],
     DoctrineBundle::class => ['all' => true],
     TwigBundle::class => ['all' => true],
+    TwigComponentBundle::class => ['all' => true],
     SecurityBundle::class => ['all' => true],
     KachnitelAuditorBundle::class => ['all' => true],
 ];

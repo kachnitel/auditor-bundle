@@ -1,6 +1,4 @@
 {# Row actions for audit list view - user/request filter buttons #}
-{# Usage: include '@KachnitelAuditor/Admin/Audit/_row-actions.html.twig' with {item: item, dataSource: dataSource} #}
-
 {% set diffsWithMeta = item.getDiffs(true) %}
 {% set requestId = diffsWithMeta['@context']['request_id']|default(null) %}
 {% set hasTimelineSupport = dataSource is defined and dataSource.hasTimelineSupport() %}
@@ -14,20 +12,7 @@
             </a>
         {% endif %}
         {% if item.getUsername() and createdAt %}
-            {# Timeline: show ALL entity changes by this user within ±5 minutes #}
-            {% set fromTime = createdAt|date_modify('-5 minutes')|date('Y-m-d H:i:s') %}
-            {% set toTime = createdAt|date_modify('+5 minutes')|date('Y-m-d H:i:s') %}
-            <a href="{{ path('dh_auditor_timeline', {
-                   user: item.getUsername(),
-                   from: fromTime,
-                   to: toTime,
-                   anchor_entity: dataSource.getEntityClass(),
-                   anchor_id: item.getId()
-               }) }}"
-               class="btn btn-outline-primary"
-               title="Show timeline: all changes by {{ item.getUsername() }} within ±5 minutes">
-                <span class="material-icons" style="font-size: 1rem;">schedule</span>
-            </a>
+            <twig:K:Audit:TimelineLink :item="item" :dataSource="dataSource" class="btn btn-outline-primary" />
         {% elseif item.getUsername() %}
             {# Show all changes by this user (no date filter) #}
             <a href="?columnFilters[blame_user]={{ item.getUsername()|url_encode }}"

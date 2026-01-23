@@ -1,0 +1,18 @@
+{# Timeline link - shows all changes by user within ±5 minutes #}
+{% set createdAt = item.getCreatedAt() %}
+{% if item.getUsername() and createdAt %}
+    {% set fromTime = createdAt|date_modify('-5 minutes')|date('Y-m-d H:i:s') %}
+    {% set toTime = createdAt|date_modify('+5 minutes')|date('Y-m-d H:i:s') %}
+    <a href="{{ path('kachnitel_auditor_timeline', {
+           user: item.getUsername(),
+           from: fromTime,
+           to: toTime,
+           anchor_entity: dataSource.getEntityClass(),
+           anchor_id: item.getId()
+       }) }}"
+       class="{{ class }}"
+       title="Show timeline: all changes by {{ item.getUsername() }} within ±5 minutes">
+        <span class="material-icons align-middle" style="font-size: 1rem;">schedule</span>
+        {% if showLabel %}User Timeline{% endif %}
+    </a>
+{% endif %}

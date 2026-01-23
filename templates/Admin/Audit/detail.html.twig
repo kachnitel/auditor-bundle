@@ -105,7 +105,7 @@
                         <p>
                             {% set fromTime = entry.getCreatedAt()|date_modify('-5 minutes')|date('Y-m-d H:i:s') %}
                             {% set toTime = entry.getCreatedAt()|date_modify('+5 minutes')|date('Y-m-d H:i:s') %}
-                            <a href="{{ path('dh_auditor_timeline', {
+                            <a href="{{ path('kachnitel_auditor_timeline', {
                                    user: entry.getUsername(),
                                    from: fromTime,
                                    to: toTime,
@@ -237,7 +237,7 @@
                             {% if entry.getUsername() and entry.getCreatedAt() %}
                                 {% set fromTime = entry.getCreatedAt()|date_modify('-5 minutes')|date('Y-m-d H:i:s') %}
                                 {% set toTime = entry.getCreatedAt()|date_modify('+5 minutes')|date('Y-m-d H:i:s') %}
-                                <a href="{{ path('dh_auditor_timeline', {
+                                <a href="{{ path('kachnitel_auditor_timeline', {
                                        user: entry.getUsername(),
                                        from: fromTime,
                                        to: toTime,

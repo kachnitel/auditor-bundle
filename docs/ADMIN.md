@@ -28,6 +28,33 @@ When `kachnitel/admin-bundle` is installed, audit data sources are automatically
 | `AuditDataSource` | DataSource implementation for audit entries |
 | `AuditDataSourceFactory` | Creates data sources for audited entity types |
 
+## UI Components
+
+Reusable Twig components for displaying audit information. Requires `symfony/ux-twig-component` package.
+
+| Component | Description | Props |
+|-----------|-------------|-------|
+| `K:Audit:ChangesPreview` | Inline preview with modal for audit changes | `item`, `dataSource` |
+| `K:Audit:RowActions` | Row action buttons (request filter, user timeline) | `item`, `dataSource` |
+| `K:Audit:TimelineLink` | Link to user timeline view | `item`, `dataSource`, `showLabel?`, `class?` |
+| `K:Audit:DiffInlineEntitySummary` | Inline display for insert/remove operations | `diffs` |
+| `K:Audit:DiffInlineAssociationLink` | Inline display for associate/dissociate | `diffs` |
+| `K:Audit:DiffInlineFieldChanges` | Inline display for field changes | `diffs` |
+| `K:Audit:DiffModalEntitySummary` | Modal content for entity operations | `diffs` |
+| `K:Audit:DiffModalAssociationLink` | Modal content for associations | `diffs` |
+| `K:Audit:DiffModalFieldChanges` | Modal content for field changes | `diffs`, `entryId` |
+
+### Usage Example
+
+```twig
+{# Display audit entry with preview and actions #}
+<twig:K:Audit:ChangesPreview :item="entry" :dataSource="dataSource" />
+<twig:K:Audit:RowActions :item="entry" :dataSource="dataSource" />
+
+{# Timeline link with custom styling #}
+<twig:K:Audit:TimelineLink :item="entry" :dataSource="dataSource" showLabel class="btn btn-sm" />
+```
+
 ## Requirements
 
 ```bash

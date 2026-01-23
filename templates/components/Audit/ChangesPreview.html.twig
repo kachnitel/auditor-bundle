@@ -1,6 +1,4 @@
 {# Inline preview of audit changes for table display #}
-{# Usage: include '@KachnitelAuditor/Admin/Audit/_changes-preview.html.twig' with {entry: entry, item: item, dataSource: dataSource} #}
-
 {% set diffs = item.getDiffs() %}
 {% set diffsWithMeta = item.getDiffs(true) %}
 {% set entryId = item.getId() %}
@@ -15,11 +13,11 @@
     {# Inline preview #}
     <ul class="list-unstyled d-inline-block mb-0">
         {% if diffType == 'entity_summary' %}
-            {% include '@KachnitelAuditor/Admin/Audit/_diff-inline-entity-summary.html.twig' %}
+            <twig:K:Audit:DiffInlineEntitySummary :diffs="diffs" />
         {% elseif diffType == 'association_link' %}
-            {% include '@KachnitelAuditor/Admin/Audit/_diff-inline-association-link.html.twig' %}
+            <twig:K:Audit:DiffInlineAssociationLink :diffs="diffs" />
         {% else %}
-            {% include '@KachnitelAuditor/Admin/Audit/_diff-inline-field-changes.html.twig' %}
+            <twig:K:Audit:DiffInlineFieldChanges :diffs="diffs" />
         {% endif %}
     </ul>
 
@@ -37,11 +35,11 @@
                 </div>
                 <div class="modal-body">
                     {% if diffType == 'entity_summary' %}
-                        {% include '@KachnitelAuditor/Admin/Audit/_diff-modal-entity-summary.html.twig' %}
+                        <twig:K:Audit:DiffModalEntitySummary :diffs="diffs" />
                     {% elseif diffType == 'association_link' %}
-                        {% include '@KachnitelAuditor/Admin/Audit/_diff-modal-association-link.html.twig' %}
+                        <twig:K:Audit:DiffModalAssociationLink :diffs="diffs" />
                     {% else %}
-                        {% include '@KachnitelAuditor/Admin/Audit/_diff-modal-field-changes.html.twig' %}
+                        <twig:K:Audit:DiffModalFieldChanges :diffs="diffs" :entryId="entryId" />
                     {% endif %}
                 </div>
                 <div class="modal-footer d-flex justify-content-between">
@@ -53,12 +51,7 @@
                                     View Related ({{ requestId[:8] }}...)
                                 </a>
                             {% endif %}
-                            {% if item.getUsername() and item.getUserId() %}
-                                <a href="?columnFilters[blame_user]={{ item.getUserId()|url_encode }}" class="btn btn-outline-primary btn-sm ms-1" title="Show other changes by this user">
-                                    <span class="material-icons align-middle" style="font-size: 1rem;">timeline</span>
-                                    User Timeline
-                                </a>
-                            {% endif %}
+                            <twig:K:Audit:TimelineLink :item="item" :dataSource="dataSource" showLabel class="btn btn-outline-primary btn-sm ms-1" />
                         {% endif %}
                     </div>
                     <button type="button" class="btn btn-secondary" data-bs-dismiss="modal">Close</button>

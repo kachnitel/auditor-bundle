@@ -1,3 +1,5 @@
-kachnitel_auditor:
-    resource: "@KachnitelAuditorBundle/Controller/"
-    type: auditor
+# Timeline route for testing component rendering
+kachnitel_auditor_timeline:
+    path: /admin/audit/timeline
+    controller: Kachnitel\AuditorBundle\Controller\TimelineController::timeline
+    methods: [GET]

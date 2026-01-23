@@ -21,7 +21,7 @@ class AuditorRouteLoader extends Loader
     public function load(mixed $resource, ?string $type = null): RouteCollection
     {
         if ($this->isLoaded) {
-            throw new \RuntimeException('Do not add the "dh_auditor" loader twice');
+            throw new \RuntimeException('Do not add the "kachnitel_auditor" loader twice');
         }
 
         $routes = new RouteCollection();
@@ -30,7 +30,7 @@ class AuditorRouteLoader extends Loader
         $route = new Route(
             '/admin/audit/timeline',
             [
-                '_controller' => 'DH\AuditorBundle\Controller\TimelineController::timeline',
+                '_controller' => 'Kachnitel\AuditorBundle\Controller\TimelineController::timeline',
             ],
             [],
             [],
@@ -38,7 +38,7 @@ class AuditorRouteLoader extends Loader
             [],
             ['GET']
         );
-        $routes->add('dh_auditor_timeline', $route);
+        $routes->add('kachnitel_auditor_timeline', $route);
 
         $this->isLoaded = true;
 
@@ -47,6 +47,6 @@ class AuditorRouteLoader extends Loader
 
     public function supports(mixed $resource, ?string $type = null): bool
     {
-        return 'dh_auditor' === $type;
+        return 'kachnitel_auditor' === $type;
     }
 }

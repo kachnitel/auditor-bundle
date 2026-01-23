@@ -408,7 +408,7 @@ final class AuditDataSourceTest extends KernelTestCase
         $this->assertInstanceOf(ColumnMetadata::class, $columns['actions']);
         $this->assertSame('actions', $columns['actions']->type);
         $this->assertFalse($columns['actions']->sortable);
-        $this->assertSame('@KachnitelAuditor/Admin/Audit/_row-actions.html.twig', $columns['actions']->template);
+        $this->assertSame('@KachnitelAuditor/components/Audit/RowActions.html.twig', $columns['actions']->template);
     }
 
     public function testGetColumnsIncludesDiffsColumnWithTemplate(): void
@@ -418,7 +418,7 @@ final class AuditDataSourceTest extends KernelTestCase
         $this->assertArrayHasKey('diffs', $columns);
         $this->assertSame('json', $columns['diffs']->type);
         $this->assertFalse($columns['diffs']->sortable);
-        $this->assertSame('@KachnitelAuditor/Admin/Audit/_changes-preview.html.twig', $columns['diffs']->template);
+        $this->assertSame('@KachnitelAuditor/components/Audit/ChangesPreview.html.twig', $columns['diffs']->template);
     }
 
     // =========================================================================
@@ -1376,5 +1376,137 @@ final class AuditDataSourceTest extends KernelTestCase
         $resultWithFilter = $this->dataSource->query('', ['hide_system' => '1'], 'id', 'ASC', 1, 50);
         $this->assertSame(5, $resultWithFilter->totalItems, 'Should find 5 real user entries even when first 55 are system events');
         $this->assertCount(5, $resultWithFilter->items);
+    }
+
+    public function testQueryWithObjectIdWildcardStartsWith(): void
+    {
+        // Create authors with different IDs
+        $auditingService = $this->provider->getAuditingServiceForEntity(Author::class);
+        $em = $auditingService->getEntityManager();
+
+        // Create 3 authors - IDs will be 1, 2, 3
+        for ($i = 1; $i <= 3; ++$i) {
+            $author = new Author();
+            $author->setFullname("Author {$i}")->setEmail("author{$i}@example.com");
+            $em->persist($author);
+        }
+        $em->flush();
+        $this->flushAll([Author::class => $auditingService]);
+
+        // Filter with starts-with wildcard (e.g., "1*" should match IDs starting with 1)
+        $result = $this->dataSource->query('', ['object_id' => '1*'], 'created_at', 'DESC', 1, 50);
+
+        // Should match ID "1" (starts with 1)
+        $this->assertGreaterThanOrEqual(1, $result->totalItems);
+        foreach ($result->items as $item) {
+            $this->assertStringStartsWith('1', $item->getObjectId() ?? '');
+        }
+    }
+
+    public function testQueryWithObjectIdWildcardContains(): void
+    {
+        // This test verifies that *abc* pattern works for contains matching
+        $auditingService = $this->provider->getAuditingServiceForEntity(Author::class);
+        $em = $auditingService->getEntityManager();
+
+        // Create authors
+        for ($i = 1; $i <= 5; ++$i) {
+            $author = new Author();
+            $author->setFullname("Author {$i}")->setEmail("author{$i}@example.com");
+            $em->persist($author);
+        }
+        $em->flush();
+        $this->flushAll([Author::class => $auditingService]);
+
+        // Without wildcard - exact match, should find 0 (no object_id matches "*")
+        $resultExact = $this->dataSource->query('', ['object_id' => '999'], 'created_at', 'DESC', 1, 50);
+        $this->assertSame(0, $resultExact->totalItems);
+
+        // With * wildcard pattern - should use LIKE and find entries
+        $resultWildcard = $this->dataSource->query('', ['object_id' => '*'], 'created_at', 'DESC', 1, 50);
+        $this->assertSame(5, $resultWildcard->totalItems);
+    }
+
+    public function testQueryWithObjectIdExactMatchStillWorks(): void
+    {
+        // Verify that exact matching (no wildcard) still works
+        $auditingService = $this->provider->getAuditingServiceForEntity(Author::class);
+        $em = $auditingService->getEntityManager();
+
+        $author1 = new Author();
+        $author1->setFullname('Author 1')->setEmail('author1@example.com');
+        $em->persist($author1);
+
+        $author2 = new Author();
+        $author2->setFullname('Author 2')->setEmail('author2@example.com');
+        $em->persist($author2);
+
+        $em->flush();
+        $this->flushAll([Author::class => $auditingService]);
+
+        // Exact match without wildcard
+        $result = $this->dataSource->query('', ['object_id' => (string) $author1->getId()], 'created_at', 'DESC', 1, 50);
+
+        $this->assertSame(1, $result->totalItems);
+        $this->assertSame((string) $author1->getId(), $result->items[0]->getObjectId());
+    }
+
+    public function testQueryWithObjectIdWildcardCombinedWithTypeFilter(): void
+    {
+        // Test that wildcard object_id works with other filters
+        $auditingService = $this->provider->getAuditingServiceForEntity(Author::class);
+        $em = $auditingService->getEntityManager();
+
+        // Create and then update an author
+        $author = new Author();
+        $author->setFullname('Test Author')->setEmail('test@example.com');
+        $em->persist($author);
+        $em->flush();
+        $this->flushAll([Author::class => $auditingService]);
+
+        // Update to create an 'update' type entry
+        $author->setFullname('Updated Author');
+        $em->flush();
+        $this->flushAll([Author::class => $auditingService]);
+
+        // Wildcard + type filter
+        $resultInsert = $this->dataSource->query('', ['object_id' => '*', 'type' => 'insert'], 'created_at', 'DESC', 1, 50);
+        $this->assertSame(1, $resultInsert->totalItems);
+        $this->assertSame('insert', $resultInsert->items[0]->getType());
+
+        $resultUpdate = $this->dataSource->query('', ['object_id' => '*', 'type' => 'update'], 'created_at', 'DESC', 1, 50);
+        $this->assertSame(1, $resultUpdate->totalItems);
+        $this->assertSame('update', $resultUpdate->items[0]->getType());
+    }
+
+    public function testGetFiltersTypeIsEnumWithAllOptions(): void
+    {
+        $filters = $this->dataSource->getFilters();
+
+        $this->assertArrayHasKey('type', $filters);
+        $typeFilter = $filters['type'];
+        $this->assertInstanceOf(FilterMetadata::class, $typeFilter);
+        $this->assertSame('enum', $typeFilter->type);
+
+        // Verify all action types are present
+        $options = $typeFilter->choices;
+        $this->assertContains('insert', $options);
+        $this->assertContains('update', $options);
+        $this->assertContains('remove', $options);
+        $this->assertContains('associate', $options);
+        $this->assertContains('dissociate', $options);
+        $this->assertContains('event', $options);
+    }
+
+    public function testObjectIdFilterPlaceholderHintsWildcard(): void
+    {
+        $filters = $this->dataSource->getFilters();
+
+        $this->assertArrayHasKey('object_id', $filters);
+        $objectIdFilter = $filters['object_id'];
+        $this->assertInstanceOf(FilterMetadata::class, $objectIdFilter);
+
+        // Placeholder should mention wildcard support
+        $this->assertStringContainsString('*', $objectIdFilter->placeholder ?? '');
     }
 }

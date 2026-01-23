@@ -133,3 +133,31 @@ services:
   Kachnitel\AuditorBundle\Twig\DiffFormatterExtension:
     tags:
       - { name: twig.extension }
+
+  # Twig components for audit UI
+  Kachnitel\AuditorBundle\Twig\Components\Audit\TimelineLink:
+    autoconfigure: true
+
+  Kachnitel\AuditorBundle\Twig\Components\Audit\ChangesPreview:
+    autoconfigure: true
+
+  Kachnitel\AuditorBundle\Twig\Components\Audit\RowActions:
+    autoconfigure: true
+
+  Kachnitel\AuditorBundle\Twig\Components\Audit\DiffInlineEntitySummary:
+    autoconfigure: true
+
+  Kachnitel\AuditorBundle\Twig\Components\Audit\DiffInlineAssociationLink:
+    autoconfigure: true
+
+  Kachnitel\AuditorBundle\Twig\Components\Audit\DiffInlineFieldChanges:
+    autoconfigure: true
+
+  Kachnitel\AuditorBundle\Twig\Components\Audit\DiffModalEntitySummary:
+    autoconfigure: true
+
+  Kachnitel\AuditorBundle\Twig\Components\Audit\DiffModalAssociationLink:
+    autoconfigure: true
+
+  Kachnitel\AuditorBundle\Twig\Components\Audit\DiffModalFieldChanges:
+    autoconfigure: true

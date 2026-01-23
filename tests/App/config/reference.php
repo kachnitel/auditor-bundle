@@ -949,6 +949,18 @@ namespace Symfony\Component\DependencyInjection\Loader\Configurator;
  *         html_to_text_converter?: scalar|null, // A service implementing the "Symfony\Component\Mime\HtmlToTextConverter\HtmlToTextConverterInterface". // Default: null
  *     },
  * }
+ * @psalm-type TwigComponentConfig = array{
+ *     defaults?: array<string, string|array{ // Default: ["__deprecated__use_old_naming_behavior"]
+ *         template_directory?: scalar|null, // Default: "components"
+ *         name_prefix?: scalar|null, // Default: ""
+ *     }>,
+ *     anonymous_template_directory?: scalar|null, // Defaults to `components`
+ *     profiler?: bool|array{ // Enables the profiler for Twig Component
+ *         enabled?: bool, // Default: "%kernel.debug%"
+ *         collect_components?: bool, // Collect components instances // Default: true
+ *     },
+ *     controllers_json?: scalar|null, // Deprecated: The "twig_component.controllers_json" config option is deprecated, and will be removed in 3.0. // Default: null
+ * }
  * @psalm-type SecurityConfig = array{
  *     access_denied_url?: scalar|null, // Default: null
  *     session_fixation_strategy?: "none"|"migrate"|"invalidate", // Default: "migrate"
@@ -1275,6 +1287,7 @@ namespace Symfony\Component\DependencyInjection\Loader\Configurator;
  *     framework?: FrameworkConfig,
  *     doctrine?: DoctrineConfig,
  *     twig?: TwigConfig,
+ *     twig_component?: TwigComponentConfig,
  *     security?: SecurityConfig,
  *     kachnitel_auditor?: KachnitelAuditorConfig,
  *     "when@test"?: array{
@@ -1284,6 +1297,7 @@ namespace Symfony\Component\DependencyInjection\Loader\Configurator;
  *         framework?: FrameworkConfig,
  *         doctrine?: DoctrineConfig,
  *         twig?: TwigConfig,
+ *         twig_component?: TwigComponentConfig,
  *         security?: SecurityConfig,
  *         kachnitel_auditor?: KachnitelAuditorConfig,
  *     },

@@ -22,7 +22,7 @@ class TimelineController extends AbstractController
         private readonly AuditReader $auditReader,
     ) {}
 
-    #[Route('/admin/audit/timeline', name: 'dh_auditor_timeline', methods: ['GET'])]
+    #[Route('/admin/audit/timeline', name: 'kachnitel_auditor_timeline', methods: ['GET'])]
     public function timeline(Request $request): Response
     {
         $user = $request->query->getString('user');

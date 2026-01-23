@@ -35,6 +35,20 @@ final class FilterMetadata
         return new self($name, 'enum', $label, $choices, null, $priority, $multiple);
     }
 
+    /**
+     * @param class-string<\BackedEnum> $enumClass
+     */
+    public static function enumClass(string $name, string $enumClass, string $label, bool $showAllOption = true, ?int $priority = null): self
+    {
+        // Get values from the enum
+        $choices = array_map(
+            static fn (\BackedEnum $case): string => (string) $case->value,
+            $enumClass::cases()
+        );
+
+        return new self($name, 'enum', $label, $choices, null, $priority, false);
+    }
+
     public static function dateRange(string $name, string $label, ?int $priority = null): self
     {
         return new self($name, 'daterange', $label, null, null, $priority);

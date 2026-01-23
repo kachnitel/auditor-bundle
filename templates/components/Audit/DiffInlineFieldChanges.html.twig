@@ -1,5 +1,4 @@
 {# Inline preview for field changes (update/association_change) #}
-{# Expects: diffs #}
 {% for key, value in diffs %}
     {% if key not in ['@source', '@context'] and value is iterable %}
         <li class="mb-1">
