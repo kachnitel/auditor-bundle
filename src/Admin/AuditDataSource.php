@@ -81,7 +81,7 @@ class AuditDataSource implements DataSourceInterface
     {
         return [
             'object_id' => FilterMetadata::text('object_id', 'Entity ID', 'Search by ID (use * for wildcard)...', 1),
-            'type' => FilterMetadata::enumClass('type', AuditActionType::class, 'Action', true, 2),
+            'type' => FilterMetadata::enumClass('type', AuditActionType::class, 'Action', true, true, 2),
             'created_at' => FilterMetadata::dateRange('created_at', 'Date', 3),
             'blame_user' => FilterMetadata::text('blame_user', 'User', 'Search user...', 4),
             'hide_system' => FilterMetadata::boolean('hide_system', 'Hide System Events', false, 5),
