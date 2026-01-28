@@ -38,7 +38,7 @@ final class FilterMetadata
     /**
      * @param class-string<\BackedEnum> $enumClass
      */
-    public static function enumClass(string $name, string $enumClass, string $label, bool $showAllOption = true, ?int $priority = null): self
+    public static function enumClass(string $name, string $enumClass, string $label, bool $showAllOption = true, bool $multiple = false, ?int $priority = null): self
     {
         // Get values from the enum
         $choices = array_map(
