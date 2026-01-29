@@ -19,7 +19,7 @@ and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0
     'types' => ['feat', 'fix', 'perf', 'refactor', 'docs', 'test', 'build'],
     'ignoreTypes' => [],
     'ignorePatterns' => ['/^WIP/', '/^wip/'],
-    'tagPrefix' => 'v',
+    'tagPrefix' => '',
     'owner' => 'kachnitel',
     'repository' => 'auditor-bundle',
     'commitUrlFormat' => 'github.com/{{owner}}/{{repository}}/commit/{{hash}}',
