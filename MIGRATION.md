@@ -6,7 +6,7 @@ This is an independent fork with a different namespace. Migrating requires code 
 
 ```diff
 - "damienharper/auditor-bundle": "^6.0"
-+ "kachnitel/auditor-bundle": "^6.0"
++ "kachnitel/auditor-bundle": "^0.1"
 ```
 
 ## 2. Update bundle registration

@@ -51,7 +51,8 @@
   },
   "require-dev": {
     "gedmo/doctrine-extensions": "^2.4|^3.0",
-    "kachnitel/admin-bundle": "dev-master",
+    "kachnitel/admin-bundle": "^0.4",
+    "marcocesarato/php-conventional-changelog": "^1.17",
     "matthiasnoback/symfony-dependency-injection-test": "^6.0",
     "nyholm/symfony-bundle-test": "^2.0|^3.0",
     "phpunit/phpunit": "^11.0",
@@ -76,7 +77,8 @@
       "@cs-check",
       "@phpstan",
       "@test"
-    ]
+    ],
+    "release": ".scripts/release.sh"
   },
   "config": {
     "sort-packages": true,
@@ -85,13 +87,6 @@
     },
     "preferred-install": {
       "damienharper/auditor": "source"
-    }
-  },
-  "extra": {
-    "branch-alias": {
-      "dev-master": "6.x-dev",
-      "dev-5.x": "5.x-dev",
-      "dev-4.x": "4.x-dev"
     }
   }
 }

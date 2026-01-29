@@ -1,0 +1,28 @@
+<?php
+
+return [
+    'headerTitle' => 'Changelog',
+    'headerDescription' => 'All notable changes to this project will be documented in this file.
+
+The format is based on [Keep a Changelog](https://keepachangelog.com/en/1.0.0/),
+and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0.html).',
+    'preset' => [
+        'feat' => ['label' => 'Added', 'description' => 'New features'],
+        'fix' => ['label' => 'Fixed', 'description' => 'Bug fixes'],
+        'perf' => ['label' => 'Performance', 'description' => 'Performance improvements'],
+        'refactor' => ['label' => 'Changed', 'description' => 'Code changes'],
+        'revert' => ['label' => 'Removed', 'description' => 'Removed features'],
+        'docs' => ['label' => 'Documentation', 'description' => 'Documentation changes'],
+        'test' => ['label' => 'Tests', 'description' => 'Test additions or changes'],
+        'build' => ['label' => 'Build', 'description' => 'Build system changes'],
+    ],
+    'types' => ['feat', 'fix', 'perf', 'refactor', 'docs', 'test', 'build'],
+    'ignoreTypes' => [],
+    'ignorePatterns' => ['/^WIP/', '/^wip/'],
+    'tagPrefix' => 'v',
+    'owner' => 'kachnitel',
+    'repository' => 'auditor-bundle',
+    'commitUrlFormat' => 'github.com/{{owner}}/{{repository}}/commit/{{hash}}',
+    'compareUrlFormat' => 'github.com/{{owner}}/{{repository}}/compare/{{previousTag}}...{{currentTag}}',
+    'issueUrlFormat' => 'github.com/{{owner}}/{{repository}}/issues/{{id}}',
+];
