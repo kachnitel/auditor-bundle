@@ -23,6 +23,12 @@
       "role": "Fork Maintainer"
     }
   ],
+  "repositories": [
+    {
+      "type": "vcs",
+      "url": "https://github.com/kachnitel/php-conventional-changelog"
+    }
+  ],
   "require": {
     "php": ">=8.2",
     "damienharper/auditor": "^3.2",
@@ -52,7 +58,7 @@
   "require-dev": {
     "gedmo/doctrine-extensions": "^2.4|^3.0",
     "kachnitel/admin-bundle": "^0.4",
-    "marcocesarato/php-conventional-changelog": "^1.17",
+    "marcocesarato/php-conventional-changelog": "dev-fix/symfony-console-7-compat",
     "matthiasnoback/symfony-dependency-injection-test": "^6.0",
     "nyholm/symfony-bundle-test": "^2.0|^3.0",
     "phpunit/phpunit": "^11.0",
