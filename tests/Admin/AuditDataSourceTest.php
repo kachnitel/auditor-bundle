@@ -103,6 +103,7 @@ final class AuditDataSourceTest extends KernelTestCase
 
         $this->assertInstanceOf(FilterMetadata::class, $filters['type']);
         $this->assertSame('enum', $filters['type']->type);
+        $this->assertTrue($filters['type']->multiple);
     }
 
     public function testGetDefaultSortBy(): void
@@ -758,6 +759,51 @@ final class AuditDataSourceTest extends KernelTestCase
 
         // Filter for both 'insert' and 'update' types as array
         $result = $this->dataSource->query('', ['type' => ['insert', 'update']], 'created_at', 'DESC', 1, 50);
+
+        $this->assertSame(2, $result->totalItems);
+    }
+
+    public function testQueryWithTypeFilterAsJsonString(): void
+    {
+        // Create and update an author (generates insert and update)
+        $auditingService = $this->provider->getAuditingServiceForEntity(Author::class);
+        $em = $auditingService->getEntityManager();
+
+        $author = new Author();
+        $author->setFullname('Original Name')->setEmail('author@example.com');
+        $em->persist($author);
+        $em->flush();
+        $this->flushAll([Author::class => $auditingService]);
+
+        $author->setFullname('Updated Name');
+        $em->flush();
+        $this->flushAll([Author::class => $auditingService]);
+
+        // Filter with JSON-encoded string (as sent by EnumMultiFilter component)
+        $result = $this->dataSource->query('', ['type' => '["update"]'], 'created_at', 'DESC', 1, 50);
+
+        $this->assertSame(1, $result->totalItems);
+        $this->assertSame('update', $result->items[0]->getType());
+    }
+
+    public function testQueryWithTypeFilterAsJsonStringMultipleValues(): void
+    {
+        // Create and update an author (generates insert and update)
+        $auditingService = $this->provider->getAuditingServiceForEntity(Author::class);
+        $em = $auditingService->getEntityManager();
+
+        $author = new Author();
+        $author->setFullname('Original Name')->setEmail('author@example.com');
+        $em->persist($author);
+        $em->flush();
+        $this->flushAll([Author::class => $auditingService]);
+
+        $author->setFullname('Updated Name');
+        $em->flush();
+        $this->flushAll([Author::class => $auditingService]);
+
+        // Filter with JSON-encoded string containing multiple values
+        $result = $this->dataSource->query('', ['type' => '["insert","update"]'], 'created_at', 'DESC', 1, 50);
 
         $this->assertSame(2, $result->totalItems);
     }

@@ -46,7 +46,7 @@ final class FilterMetadata
             $enumClass::cases()
         );
 
-        return new self($name, 'enum', $label, $choices, null, $priority, false);
+        return new self($name, 'enum', $label, $choices, null, $priority, $multiple);
     }
 
     public static function dateRange(string $name, string $label, ?int $priority = null): self

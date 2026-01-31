@@ -409,7 +409,15 @@ class AuditDataSource implements DataSourceInterface
         }
 
         if (!empty($filters['type'])) {
-            $additionalFilters['type'] = $filters['type'];
+            $typeFilter = $filters['type'];
+            // Handle JSON string format from EnumMultiFilter (e.g., '["insert","update"]')
+            if (\is_string($typeFilter)) {
+                $decoded = json_decode($typeFilter, true);
+                if (\is_array($decoded)) {
+                    $typeFilter = $decoded;
+                }
+            }
+            $additionalFilters['type'] = $typeFilter;
         }
 
         if (!empty($filters['created_at'])) {
@@ -481,7 +489,15 @@ class AuditDataSource implements DataSourceInterface
         $additionalFilters = [];
 
         if (!empty($filters['type'])) {
-            $additionalFilters['type'] = $filters['type'];
+            $typeFilter = $filters['type'];
+            // Handle JSON string format from EnumMultiFilter (e.g., '["insert","update"]')
+            if (\is_string($typeFilter)) {
+                $decoded = json_decode($typeFilter, true);
+                if (\is_array($decoded)) {
+                    $typeFilter = $decoded;
+                }
+            }
+            $additionalFilters['type'] = $typeFilter;
         }
 
         if (!empty($filters['created_at'])) {
@@ -554,9 +570,16 @@ class AuditDataSource implements DataSourceInterface
                 return false;
             }
 
-            // Type filter
+            // Type filter (handles JSON string from EnumMultiFilter, e.g., '["insert","update"]')
             if (!empty($filters['type'])) {
-                $types = \is_array($filters['type']) ? $filters['type'] : [$filters['type']];
+                $typeFilter = $filters['type'];
+                if (\is_string($typeFilter)) {
+                    $decoded = json_decode($typeFilter, true);
+                    if (\is_array($decoded)) {
+                        $typeFilter = $decoded;
+                    }
+                }
+                $types = \is_array($typeFilter) ? $typeFilter : [$typeFilter];
                 if (!\in_array($entry->getType(), $types, true)) {
                     return false;
                 }
@@ -623,9 +646,16 @@ class AuditDataSource implements DataSourceInterface
             $query->addFilter(new SimpleFilter(Query::OBJECT_ID, $filters['object_id']));
         }
 
-        // Type filter
+        // Type filter (handles JSON string from EnumMultiFilter, e.g., '["insert","update"]')
         if (!empty($filters['type'])) {
-            $types = \is_array($filters['type']) ? $filters['type'] : [$filters['type']];
+            $typeFilter = $filters['type'];
+            if (\is_string($typeFilter)) {
+                $decoded = json_decode($typeFilter, true);
+                if (\is_array($decoded)) {
+                    $typeFilter = $decoded;
+                }
+            }
+            $types = \is_array($typeFilter) ? $typeFilter : [$typeFilter];
             $query->addFilter(new SimpleFilter(Query::TYPE, $types));
         }
 
