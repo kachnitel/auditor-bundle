@@ -1,98 +1,99 @@
 {
-  "name": "kachnitel/auditor-bundle",
-  "type": "symfony-bundle",
-  "description": "Fork of damienharper/auditor-bundle with additional features (AuditContext, AuditReader, Snapshot, EventAuditService, admin integration).",
-  "keywords": [
-    "doctrine",
-    "audit",
-    "auditor",
-    "audit-log",
-    "audit-trail",
-    "symfony"
-  ],
-  "license": "MIT",
-  "authors": [
-    {
-      "name": "Damien Harper",
-      "email": "damien.harper@gmail.com",
-      "role": "Original Author"
-    },
-    {
-      "name": "Ondrej Vana",
-      "email": "vana.ondrej@gmail.com",
-      "role": "Fork Maintainer"
-    }
-  ],
-  "repositories": [
-    {
-      "type": "vcs",
-      "url": "https://github.com/kachnitel/php-conventional-changelog"
-    }
-  ],
-  "require": {
-    "php": ">=8.2",
-    "damienharper/auditor": "^3.2",
-    "doctrine/doctrine-bundle": "^2.0|^3.0",
-    "doctrine/orm": "^3.1",
-    "symfony/doctrine-bridge": "^5.4|^6.4|^7.0",
-    "symfony/event-dispatcher": "^5.4|^6.4|^7.0",
-    "symfony/lock": "^5.4|^6.4|^7.0",
-    "symfony/security-bundle": "^5.4|^6.4|^7.0"
-  },
-  "suggest": {
-    "kachnitel/admin-bundle": "For audit log viewing with filtering and pagination",
-    "symfony/ux-twig-component": "For using Audit Twig components"
-  },
-  "autoload": {
-    "psr-4": {
-      "Kachnitel\\AuditorBundle\\": "src"
-    }
-  },
-  "autoload-dev": {
-    "psr-4": {
-      "Kachnitel\\AuditorBundle\\Tests\\": "tests",
-      "DH\\Auditor\\Tests\\": "vendor/damienharper/auditor/tests",
-      "Kachnitel\\AdminBundle\\": "tests/Stubs/AdminBundle"
-    }
-  },
-  "require-dev": {
-    "gedmo/doctrine-extensions": "^2.4|^3.0",
-    "kachnitel/admin-bundle": "^0.4",
-    "marcocesarato/php-conventional-changelog": "dev-fix/symfony-console-7-compat",
-    "matthiasnoback/symfony-dependency-injection-test": "^6.0",
-    "nyholm/symfony-bundle-test": "^2.0|^3.0",
-    "phpunit/phpunit": "^11.0",
-    "symfony/browser-kit": "^5.4|^6.4|^7.0",
-    "symfony/css-selector": "^5.4|^6.4|^7.0",
-    "symfony/framework-bundle": "^5.4|^6.4|^7.0",
-    "symfony/ux-twig-component": "^2.13|^2.22",
-    "symfony/var-dumper": "^5.4|^6.4|^7.0"
-  },
-  "scripts": {
-    "test": "XDEBUG_MODE=coverage ./vendor/bin/phpunit --colors=always",
-    "cs-fix": "tools/php-cs-fixer/vendor/bin/php-cs-fixer fix --using-cache=no --verbose --ansi",
-    "cs-check": "tools/php-cs-fixer/vendor/bin/php-cs-fixer fix --using-cache=no --verbose --ansi --dry-run",
-    "phpstan": "tools/phpstan/vendor/bin/phpstan --memory-limit=1G --ansi analyse src",
-    "rector": "tools/rector/vendor/bin/rector",
-    "rector-check": "tools/rector/vendor/bin/rector --dry-run",
-    "update-tools": "composer update --working-dir=tools/php-cs-fixer ; composer update --working-dir=tools/phpstan ; composer update --working-dir=tools/rector",
-    "setup54": "SYMFONY_REQUIRE='^5.4' composer update --prefer-stable && rm -rf tests/App/var/cache/*",
-    "setup64": "SYMFONY_REQUIRE='^6.4' composer update --prefer-stable && rm -rf tests/App/var/cache/*",
-    "setup71": "SYMFONY_REQUIRE='^7.1' composer update --prefer-stable && rm -rf tests/App/var/cache/*",
-    "qa": [
-      "@cs-check",
-      "@phpstan",
-      "@test"
+    "name": "kachnitel/auditor-bundle",
+    "type": "symfony-bundle",
+    "description": "Fork of damienharper/auditor-bundle with additional features (AuditContext, AuditReader, Snapshot, EventAuditService, admin integration).",
+    "keywords": [
+        "doctrine",
+        "audit",
+        "auditor",
+        "audit-log",
+        "audit-trail",
+        "symfony"
     ],
-    "release": ".scripts/release.sh"
-  },
-  "config": {
-    "sort-packages": true,
-    "allow-plugins": {
-      "composer/package-versions-deprecated": true
+    "license": "MIT",
+    "authors": [
+        {
+            "name": "Damien Harper",
+            "email": "damien.harper@gmail.com",
+            "role": "Original Author"
+        },
+        {
+            "name": "Ondrej Vana",
+            "email": "vana.ondrej@gmail.com",
+            "role": "Fork Maintainer"
+        }
+    ],
+    "repositories": [
+        {
+            "type": "vcs",
+            "url": "https://github.com/kachnitel/php-conventional-changelog"
+        }
+    ],
+    "require": {
+        "php": ">=8.2",
+        "damienharper/auditor": "^3.2",
+        "doctrine/doctrine-bundle": "^2.0|^3.0",
+        "doctrine/orm": "^3.1",
+        "symfony/doctrine-bridge": "^5.4|^6.4|^7.0",
+        "symfony/event-dispatcher": "^5.4|^6.4|^7.0",
+        "symfony/lock": "^5.4|^6.4|^7.0",
+        "symfony/security-bundle": "^5.4|^6.4|^7.0"
     },
-    "preferred-install": {
-      "damienharper/auditor": "source"
-    }
-  }
+    "suggest": {
+        "kachnitel/admin-bundle": "For audit log viewing with filtering and pagination",
+        "symfony/ux-twig-component": "For using Audit Twig components"
+    },
+    "autoload": {
+        "psr-4": {
+            "Kachnitel\\AuditorBundle\\": "src"
+        }
+    },
+    "autoload-dev": {
+        "psr-4": {
+            "Kachnitel\\AuditorBundle\\Tests\\": "tests",
+            "DH\\Auditor\\Tests\\": "vendor/damienharper/auditor/tests",
+            "Kachnitel\\AdminBundle\\": "tests/Stubs/AdminBundle"
+        }
+    },
+    "require-dev": {
+        "gedmo/doctrine-extensions": "^2.4|^3.0",
+        "kachnitel/admin-bundle": "^0.4",
+        "marcocesarato/php-conventional-changelog": "dev-fix/symfony-console-7-compat",
+        "matthiasnoback/symfony-dependency-injection-test": "^6.0",
+        "nyholm/symfony-bundle-test": "^2.0|^3.0",
+        "phpunit/phpunit": "^11.0",
+        "symfony/browser-kit": "^5.4|^6.4|^7.0",
+        "symfony/css-selector": "^5.4|^6.4|^7.0",
+        "symfony/framework-bundle": "^5.4|^6.4|^7.0",
+        "symfony/ux-twig-component": "^2.13|^2.22",
+        "symfony/var-dumper": "^5.4|^6.4|^7.0"
+    },
+    "scripts": {
+        "test": "XDEBUG_MODE=coverage ./vendor/bin/phpunit --colors=always",
+        "cs-fix": "tools/php-cs-fixer/vendor/bin/php-cs-fixer fix --using-cache=no --verbose --ansi",
+        "cs-check": "tools/php-cs-fixer/vendor/bin/php-cs-fixer fix --using-cache=no --verbose --ansi --dry-run",
+        "phpstan": "tools/phpstan/vendor/bin/phpstan --memory-limit=1G --ansi analyse src",
+        "rector": "tools/rector/vendor/bin/rector",
+        "rector-check": "tools/rector/vendor/bin/rector --dry-run",
+        "update-tools": "composer update --working-dir=tools/php-cs-fixer ; composer update --working-dir=tools/phpstan ; composer update --working-dir=tools/rector",
+        "setup54": "SYMFONY_REQUIRE='^5.4' composer update --prefer-stable && rm -rf tests/App/var/cache/*",
+        "setup64": "SYMFONY_REQUIRE='^6.4' composer update --prefer-stable && rm -rf tests/App/var/cache/*",
+        "setup71": "SYMFONY_REQUIRE='^7.1' composer update --prefer-stable && rm -rf tests/App/var/cache/*",
+        "qa": [
+            "@cs-check",
+            "@phpstan",
+            "@test"
+        ],
+        "release": ".scripts/release.sh"
+    },
+    "config": {
+        "sort-packages": true,
+        "allow-plugins": {
+            "composer/package-versions-deprecated": true
+        },
+        "preferred-install": {
+            "damienharper/auditor": "source"
+        }
+    },
+    "version": "0.2.0"
 }
