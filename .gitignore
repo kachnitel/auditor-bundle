@@ -13,3 +13,7 @@ composer.lock
 .preload.php
 CLAUDE.md
 TODO.md
+
+
+#Ignore vscode AI rules
+.github/instructions/codacy.instructions.md

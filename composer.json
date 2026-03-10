@@ -43,6 +43,9 @@
         "kachnitel/admin-bundle": "For audit log viewing with filtering and pagination",
         "symfony/ux-twig-component": "For using Audit Twig components"
     },
+    "conflict": {
+        "kachnitel/admin-bundle": "<0.8"
+    },
     "autoload": {
         "psr-4": {
             "Kachnitel\\AuditorBundle\\": "src"
@@ -57,7 +60,7 @@
     },
     "require-dev": {
         "gedmo/doctrine-extensions": "^2.4|^3.0",
-        "kachnitel/admin-bundle": "^0.4",
+        "kachnitel/admin-bundle": "dev-master",
         "marcocesarato/php-conventional-changelog": "dev-fix/symfony-console-7-compat",
         "matthiasnoback/symfony-dependency-injection-test": "^6.0",
         "nyholm/symfony-bundle-test": "^2.0|^3.0",
@@ -86,6 +89,8 @@
         ],
         "release": ".scripts/release.sh"
     },
+    "minimum-stability": "dev",
+    "prefer-stable": true,
     "config": {
         "sort-packages": true,
         "allow-plugins": {

@@ -12,6 +12,7 @@ use DH\Auditor\Provider\Doctrine\Persistence\Reader\Reader;
 use Kachnitel\AdminBundle\DataSource\ColumnMetadata;
 use Kachnitel\AdminBundle\DataSource\DataSourceInterface;
 use Kachnitel\AdminBundle\DataSource\FilterMetadata;
+use Kachnitel\AdminBundle\DataSource\FlatColumnGroupsTrait;
 use Kachnitel\AdminBundle\DataSource\PaginatedResult;
 use Kachnitel\AuditorBundle\Enum\AuditActionType;
 use Kachnitel\AuditorBundle\Helper\DiffFormatter;
@@ -26,6 +27,8 @@ use Kachnitel\AuditorBundle\Service\AuditReader;
  */
 class AuditDataSource implements DataSourceInterface
 {
+    use FlatColumnGroupsTrait;
+
     private ?string $shortName = null;
 
     /**
