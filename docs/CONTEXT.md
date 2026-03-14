@@ -5,6 +5,7 @@ Add metadata to audit entries including notes, reasons, and automatic request ID
 ## Table of Contents
 
 - [AuditContext Service](#auditcontext-service)
+- [First-Wins Context Protection](#first-wins-context-protection)
 - [Request ID Tracking](#request-id-tracking)
 
 ## AuditContext Service
@@ -37,7 +38,7 @@ class ProductController
         EntityManagerInterface $em,
         Product $product
     ): Response {
-        // Set context before making changes
+        // Set context before making changes — this caller owns the context
         $auditContext->set([
             'note' => 'Manual correction after inventory count',
             'reason' => 'inventory_count',
@@ -75,6 +76,77 @@ Context is stored in the `diffs` JSON field under the `@context` key:
 2. Runs before `AuditEventSubscriber` (priority -1,000,000) which persists the audit
 3. Decodes the `diffs` JSON, adds `@context` key, re-encodes
 4. Context applies to all entities flushed in the same transaction
+
+---
+
+## First-Wins Context Protection
+
+When a single HTTP request triggers a chain of service calls (e.g. completing a task that allocates
+a product to an order, which updates inventory), multiple services might attempt to set context.
+Without protection, the deepest call in the chain would silently overwrite the most meaningful
+context — the top-level action that started everything.
+
+`AuditContext` uses **first-wins** semantics: the first caller to set context owns it for the
+duration of the request. Later callers are silently no-ops.
+
+### Behaviour per method
+
+| Method | Blocked when | Blocks others |
+|---|---|---|
+| `set()` | Any primary context already set (by set/setNote/setReason) | Blocks all subsequent `set()`, `setNote()`, `setReason()` |
+| `setNote()` | Note key already exists, or `set()` was called | Blocks subsequent `set()` only |
+| `setReason()` | Reason key already exists, or `set()` was called | Blocks subsequent `set()` only |
+| `setRequestId()` | Never blocked | Never blocks others — infrastructure only |
+| `override()` | Never blocked | Resets and re-locks; subsequent `set()` blocked again |
+
+### Example: nested service calls
+
+```php
+// TaskController — top-level, owns the context
+$auditContext->set(['note' => 'User completed task', 'reason' => 'task_completion']);
+
+// TaskService calls ProductService internally
+$productService->allocateToOrder($product, $order); // triggers its own flush
+
+// Inside ProductService — context is already claimed, these are silent no-ops:
+$auditContext->set(['note' => 'Allocated to order']);   // ignored
+$auditContext->setReason('allocation');                  // ignored
+
+// All audit entries produced by the flush still carry the top-level context:
+// "@context": { "note": "User completed task", "reason": "task_completion" }
+```
+
+### Helpers can be combined freely by the same caller
+
+`setNote()` and `setReason()` are independent at the key level — one does not block the other:
+
+```php
+$auditContext->setNote('Stock corrected');   // claims note key
+$auditContext->setReason('inventory_count'); // claims reason key independently
+$auditContext->set(['anything' => '...']);   // no-op — helpers have locked primary
+```
+
+### Explicit override
+
+When you genuinely need to replace an existing primary context, use `override()`.
+The `request_id` is always preserved:
+
+```php
+// Admin action that supersedes whatever context was set by the application layer:
+$auditContext->override(['note' => 'Admin correction', 'admin_id' => $adminId]);
+```
+
+### `hasPrimary()`
+
+Useful for callers that want to contribute context only if no one else has:
+
+```php
+if (!$auditContext->hasPrimary()) {
+    $auditContext->set(['note' => 'Fallback context']);
+}
+```
+
+---
 
 ## Request ID Tracking
 
