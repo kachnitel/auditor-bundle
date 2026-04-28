@@ -29,8 +29,12 @@ class AdminBundleIntegrationPass implements CompilerPassInterface
 {
     public function process(ContainerBuilder $container): void
     {
-        // Check if admin-bundle is available by looking for its core interface
-        if (!interface_exists('Kachnitel\AdminBundle\DataSource\DataSourceProviderInterface')) {
+        // Check if data-source-contracts is available (required by admin-bundle >= 0.9)
+        // Fall back to checking the old admin-bundle interface for backwards compatibility
+        if (
+            !interface_exists('Kachnitel\DataSourceContracts\DataSourceProviderInterface')
+            && !interface_exists('Kachnitel\AdminBundle\DataSource\DataSourceProviderInterface')
+        ) {
             return;
         }
 
@@ -51,14 +55,16 @@ class AdminBundleIntegrationPass implements CompilerPassInterface
 
     private function registerDataSourceFactory(ContainerBuilder $container): void
     {
-        // Register AuditDataSourceFactory as a data source provider
-        // It implements DataSourceProviderInterface and provides audit data sources
-        // for all audited entities
+        // Determine the correct tag: admin-bundle >= 0.9 uses data-source-contracts,
+        // older versions used the admin-bundle's own interface FQCN as the tag.
+        $tag = interface_exists('Kachnitel\DataSourceContracts\DataSourceProviderInterface')
+            ? 'Kachnitel\DataSourceContracts\DataSourceProviderInterface'
+            : 'Kachnitel\AdminBundle\DataSource\DataSourceProviderInterface';
+
         $factoryDefinition = new Definition(AuditDataSourceFactory::class);
         $factoryDefinition->setArgument(0, new Reference('DH\Auditor\Provider\Doctrine\Persistence\Reader\Reader'));
         $factoryDefinition->setArgument(1, new Reference(AuditReader::class));
-        // Tag with interface FQCN for AutowireIterator discovery in admin-bundle
-        $factoryDefinition->addTag('Kachnitel\AdminBundle\DataSource\DataSourceProviderInterface');
+        $factoryDefinition->addTag($tag);
         $factoryDefinition->setPublic(false);
 
         $container->setDefinition(AuditDataSourceFactory::class, $factoryDefinition);
@@ -67,7 +73,6 @@ class AdminBundleIntegrationPass implements CompilerPassInterface
 
     private function registerAuditIndexController(ContainerBuilder $container): void
     {
-        // Register AuditIndexController for audit data source views with "Hide System Events" toggle
         $controllerDefinition = new Definition(AuditIndexController::class);
         $controllerDefinition->setArgument(0, new Reference(DataSourceRegistry::class));
         $controllerDefinition->addTag('controller.service_arguments');
@@ -81,7 +86,6 @@ class AdminBundleIntegrationPass implements CompilerPassInterface
 
     private function registerTimelineController(ContainerBuilder $container): void
     {
-        // Register TimelineController for cross-entity audit timeline view
         $controllerDefinition = new Definition(TimelineController::class);
         $controllerDefinition->setArgument(0, new Reference(AuditReader::class));
         $controllerDefinition->addTag('controller.service_arguments');
@@ -95,7 +99,6 @@ class AdminBundleIntegrationPass implements CompilerPassInterface
 
     private function registerRouteLoader(ContainerBuilder $container): void
     {
-        // Register AuditorRouteLoader for automatic route registration
         $loaderDefinition = new Definition(AuditorRouteLoader::class);
         $loaderDefinition->addTag('routing.loader');
 

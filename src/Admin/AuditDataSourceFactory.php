@@ -7,8 +7,21 @@ namespace Kachnitel\AuditorBundle\Admin;
 use DH\Auditor\Provider\Doctrine\Persistence\Reader\Reader;
 use DH\Auditor\Provider\Doctrine\Persistence\Schema\SchemaManager;
 use DH\Auditor\Provider\Doctrine\Service\AuditingService;
-use Kachnitel\AdminBundle\DataSource\DataSourceProviderInterface;
 use Kachnitel\AuditorBundle\Service\AuditReader;
+use Kachnitel\DataSourceContracts\DataSourceProviderInterface;
+
+// Prefer the contracts package (admin-bundle >= 0.9); fall back to the bundled interface.
+if (interface_exists('Kachnitel\DataSourceContracts\DataSourceProviderInterface')) {
+    class_alias(
+        'Kachnitel\DataSourceContracts\DataSourceProviderInterface',
+        'Kachnitel\AuditorBundle\Admin\_DataSourceProviderInterface'
+    );
+} else {
+    class_alias(
+        'Kachnitel\AdminBundle\DataSource\DataSourceProviderInterface',
+        'Kachnitel\AuditorBundle\Admin\_DataSourceProviderInterface'
+    );
+}
 
 /**
  * Factory for creating AuditDataSource instances.

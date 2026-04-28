@@ -9,15 +9,15 @@ use DH\Auditor\Provider\Doctrine\Persistence\Reader\Filter\DateRangeFilter;
 use DH\Auditor\Provider\Doctrine\Persistence\Reader\Filter\SimpleFilter;
 use DH\Auditor\Provider\Doctrine\Persistence\Reader\Query;
 use DH\Auditor\Provider\Doctrine\Persistence\Reader\Reader;
-use Kachnitel\AdminBundle\DataSource\ColumnMetadata;
-use Kachnitel\AdminBundle\DataSource\DataSourceInterface;
-use Kachnitel\AdminBundle\DataSource\FilterMetadata;
-use Kachnitel\AdminBundle\DataSource\FlatColumnGroupsTrait;
-use Kachnitel\AdminBundle\DataSource\PaginatedResult;
 use Kachnitel\AuditorBundle\Enum\AuditActionType;
 use Kachnitel\AuditorBundle\Helper\DiffFormatter;
 use Kachnitel\AuditorBundle\Helper\UrlHelper;
 use Kachnitel\AuditorBundle\Service\AuditReader;
+use Kachnitel\DataSourceContracts\ColumnMetadata;
+use Kachnitel\DataSourceContracts\DataSourceInterface;
+use Kachnitel\DataSourceContracts\FilterMetadata;
+use Kachnitel\DataSourceContracts\FlatColumnGroupsTrait;
+use Kachnitel\DataSourceContracts\PaginatedResult;
 
 /**
  * Data source for audit logs of a specific entity.

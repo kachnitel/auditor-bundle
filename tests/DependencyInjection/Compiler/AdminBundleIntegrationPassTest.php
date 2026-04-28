@@ -21,7 +21,7 @@ final class AdminBundleIntegrationPassTest extends AbstractCompilerPassTestCase
     public function testRegistersFactoryWhenAdminBundleIsAvailable(): void
     {
         // Skip test if admin-bundle is not installed
-        if (!interface_exists('Kachnitel\AdminBundle\DataSource\DataSourceProviderInterface')) {
+        if (!interface_exists('Kachnitel\DataSourceContracts\DataSourceProviderInterface')) {
             $this->markTestSkipped('admin-bundle is not installed');
         }
 
@@ -35,7 +35,7 @@ final class AdminBundleIntegrationPassTest extends AbstractCompilerPassTestCase
         $this->assertContainerBuilderHasService(AuditDataSourceFactory::class);
         $this->assertContainerBuilderHasServiceDefinitionWithTag(
             AuditDataSourceFactory::class,
-            'Kachnitel\AdminBundle\DataSource\DataSourceProviderInterface'
+            'Kachnitel\DataSourceContracts\DataSourceProviderInterface'
         );
         $this->assertContainerBuilderHasAlias('kachnitel_auditor.admin.data_source_factory', AuditDataSourceFactory::class);
     }
@@ -43,7 +43,7 @@ final class AdminBundleIntegrationPassTest extends AbstractCompilerPassTestCase
     public function testDoesNotRegisterFactoryWhenReaderIsUnavailable(): void
     {
         // Skip test if admin-bundle is not installed
-        if (!interface_exists('Kachnitel\AdminBundle\DataSource\DataSourceProviderInterface')) {
+        if (!interface_exists('Kachnitel\DataSourceContracts\DataSourceProviderInterface')) {
             $this->markTestSkipped('admin-bundle is not installed');
         }
 
